@@ -1,15 +1,11 @@
 import { useMemo } from 'react'
 import { useTransactions, ACTIONS } from '../context/TransactionContext'
 
-// ─── useBudget ─────────────────────────────────────────────────────────────────
-// Custom hook: combines dispatch helpers + useMemo computed values
-// Demonstrates: useMemo, custom hooks, state management abstraction
 export function useBudget() {
   const { state, dispatch } = useTransactions()
   const { transactions, filter, search, categoryFilter } = state
 
-  // ── Computed values with useMemo ──────────────────────────────────────────
-  // Only recalculates when `transactions` changes — not on every render
+  // Only recalculates when `transactions` changes & not on every render
   const totalIncome = useMemo(
     () =>
       transactions
@@ -54,7 +50,7 @@ export function useBudget() {
       .sort((a, b) => b.amount - a.amount)
   }, [transactions])
 
-  // Monthly data for the chart
+  // for the chart
   const monthlyData = useMemo(() => {
     const map = {}
     transactions.forEach(t => {
@@ -67,7 +63,7 @@ export function useBudget() {
     return Object.values(map).sort((a, b) => a.month.localeCompare(b.month)).slice(-6)
   }, [transactions])
 
-  // ── Dispatch helpers ──────────────────────────────────────────────────────
+  // Dispatch helpers
   const addTransaction = (transaction) =>
     dispatch({ type: ACTIONS.ADD, payload: { ...transaction, id: crypto.randomUUID(), date: new Date().toISOString() } })
 

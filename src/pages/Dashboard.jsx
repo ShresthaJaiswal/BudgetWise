@@ -6,12 +6,6 @@ import TransactionForm from '../components/TransactionForm'
 import TransactionList from '../components/TransactionList'
 import SummaryCards from '../components/SummaryCards'
 
-// ─── Dashboard ─────────────────────────────────────────────────────────────────
-// Prop drilling ROOT: computes all values here and passes them down the chain:
-//   Dashboard → SummaryCards
-//   Dashboard → TransactionList → TransactionCard → TransactionBadge
-// Demonstrates: useMemo (via useBudget), prop drilling, useState, useContext
-
 export default function Dashboard() {
   const { user } = useAuth()
 
@@ -60,7 +54,6 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
-      {/* Greeting */}
       <div className="mb-6">
         <h1 className="font-display font-bold text-2xl text-slate-800 dark:text-slate-100">
           {greeting()}, {user?.name} 👋
@@ -68,7 +61,6 @@ export default function Dashboard() {
         <p className="text-slate-400 text-sm mt-0.5">Here's your financial overview.</p>
       </div>
 
-      {/* Summary Cards — prop drilling: passing useMemo values down */}
       <div className="mb-6">
         <SummaryCards
           // drilled from useMemo
@@ -79,7 +71,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Add / Edit Form */}
+        {/* Left: Add/Edit Form */}
         <div className="lg:col-span-1">
           <TransactionForm
             onSubmit={handleSubmit}
@@ -102,7 +94,6 @@ export default function Dashboard() {
                 </span>
               </div>
 
-              {/* Search — two-way binding */}
               <input
                 type="text"
                 className="input-field text-sm mb-2"
@@ -111,7 +102,6 @@ export default function Dashboard() {
                 onChange={e => setSearch(e.target.value)}
               />
 
-              {/* Type filter */}
               <div className="flex gap-1.5 flex-wrap">
                 {['all', 'income', 'expense'].map(f => (
                   <button

@@ -1,8 +1,7 @@
 import TransactionCard from './TransactionCard'
 
-// ─── TransactionList ──────────────────────────────────────────────────────────
 // Prop drilling LEVEL 1: receives `transactions`, `onEdit`, `onDelete` from Dashboard
-// Passes each transaction + handlers down to TransactionCard (level 2)
+// Passes each transaction + handlers down to TransactionCard
 
 export default function TransactionList({ transactions, onEdit, onDelete }) {
   if (transactions.length === 0) {

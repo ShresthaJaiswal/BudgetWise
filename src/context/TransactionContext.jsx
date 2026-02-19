@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useReducer } from 'react'
 
-// ─── Action Types ─────────────────────────────────────────────────────────────
 export const ACTIONS = {
   LOAD: 'LOAD',
   ADD: 'ADD',
@@ -11,7 +10,6 @@ export const ACTIONS = {
   SET_CATEGORY_FILTER: 'SET_CATEGORY_FILTER',
 }
 
-// ─── Initial State ────────────────────────────────────────────────────────────
 const initialState = {
   transactions: [],
   filter: 'all',       // 'all' | 'income' | 'expense'
@@ -19,7 +17,7 @@ const initialState = {
   categoryFilter: 'all',
 }
 
-// ─── Reducer ──────────────────────────────────────────────────────────────────
+// Reducer
 function transactionReducer(state, action) {
   switch (action.type) {
     case ACTIONS.LOAD:
@@ -59,13 +57,13 @@ function transactionReducer(state, action) {
   }
 }
 
-// ─── Context ──────────────────────────────────────────────────────────────────
+// Context
 const TransactionContext = createContext()
 
 export function TransactionProvider({ children }) {
   const [state, dispatch] = useReducer(transactionReducer, initialState)
 
-  // useEffect: load from localStorage on mount
+  // load from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('budgetwise_transactions')
     if (saved) {
@@ -73,7 +71,7 @@ export function TransactionProvider({ children }) {
     }
   }, [])
 
-  // useEffect: persist to localStorage on every change
+  // persist to localStorage on every change
   useEffect(() => {
     localStorage.setItem(
       'budgetwise_transactions',

@@ -1,6 +1,4 @@
-// ─── TransactionBadge ─────────────────────────────────────────────────────────
-// Prop drilling LEVEL 3: receives `category` and `type` drilled from:
-//   Dashboard → TransactionList → TransactionCard → TransactionBadge
+// Prop drilling LEVEL 3: receives `category` and `type`
 
 const categoryColors = {
   'Food & Dining': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
@@ -17,7 +15,7 @@ const categoryColors = {
 }
 
 export default function TransactionBadge({ category, type }) {
-  // Prop drilling level 3: uses props directly passed down the chain
+  // uses props directly passed down the chain
   const colorClass = categoryColors[category] || categoryColors['Other']
 
   return (

@@ -3,11 +3,10 @@ import { createContext, useContext, useEffect, useState } from 'react'
 const AuthContext = createContext()
 
 export function AuthProvider({ children }) {
-  // useState: track user object and loading state
   const [user, setUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
 
-  // useEffect: on mount, rehydrate auth from localStorage (simulates token check)
+  // on mount, rehydrate auth from localStorage (simulating token check)
   useEffect(() => {
     const savedUser = localStorage.getItem('budgetwise_user')
     if (savedUser) {

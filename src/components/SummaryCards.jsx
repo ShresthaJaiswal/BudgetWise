@@ -1,6 +1,4 @@
-// ─── SummaryCards ─────────────────────────────────────────────────────────────
-// Receives computed values as props from Dashboard (prop drilling level 1)
-// These values are computed via useMemo in useBudget hook
+// Receives computed values as props from Dashboard
 
 function formatAmount(amount) {
   return new Intl.NumberFormat('en-IN', {

@@ -1,6 +1,3 @@
-// ─── About Page ───────────────────────────────────────────────────────────────
-// Demonstrates: React Router page, simple static content
-
 const concepts = [
   {
     icon: '🧠',
@@ -83,7 +80,6 @@ export default function About() {
         </p>
       </div>
 
-      {/* Tech stack badges */}
       <div className="flex flex-wrap gap-2 justify-center mb-10">
         {['React 18', 'Tailwind CSS', 'axios', 'React Router v6', 'Vite'].map(t => (
           <span
@@ -95,7 +91,6 @@ export default function About() {
         ))}
       </div>
 
-      {/* Concepts grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {concepts.map((c) => (
           <div key={c.hook} className="card p-4 hover:shadow-md transition-shadow">

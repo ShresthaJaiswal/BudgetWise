@@ -14,19 +14,17 @@ export const CATEGORIES = [
   'Other',
 ]
 
-// Demonstrates: useState (two-way binding), useRef (auto-focus), useEffect (edit mode sync)
 export default function TransactionForm({ onSubmit, editData, onCancel }) {
-  // ── Two-way binding state ──────────────────────────────────────────────────
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [type, setType] = useState('expense')
   const [category, setCategory] = useState('Food & Dining')
   const [error, setError] = useState('')
 
-  // useRef: auto-focus the description input when the form mounts or edit mode opens
+  // auto-focus the description input when the form mounts or edit mode opens
   const descriptionRef = useRef(null)
 
-  // useEffect: sync form with editData when editing an existing transaction
+  // sync form with editData when editing an existing transaction
   useEffect(() => {
     if (editData) {
       setDescription(editData.description)
@@ -80,7 +78,6 @@ export default function TransactionForm({ onSubmit, editData, onCancel }) {
         </p>
       )}
 
-      {/* Type Toggle — two-way binding */}
       <div className="flex gap-2 mb-4">
         {['expense', 'income'].map(t => (
           <button
@@ -100,7 +97,6 @@ export default function TransactionForm({ onSubmit, editData, onCancel }) {
         ))}
       </div>
 
-      {/* Description — two-way binding with useRef */}
       <div className="mb-3">
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
           Description
@@ -115,7 +111,6 @@ export default function TransactionForm({ onSubmit, editData, onCancel }) {
         />
       </div>
 
-      {/* Amount — two-way binding */}
       <div className="mb-3">
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
           Amount (₹)
@@ -131,7 +126,6 @@ export default function TransactionForm({ onSubmit, editData, onCancel }) {
         />
       </div>
 
-      {/* Category — two-way binding */}
       <div className="mb-4">
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
           Category
@@ -147,7 +141,6 @@ export default function TransactionForm({ onSubmit, editData, onCancel }) {
         </select>
       </div>
 
-      {/* Actions */}
       <div className="flex gap-2">
         <button type="submit" className="btn-primary flex-1">
           {editData ? 'Save Changes' : 'Add Transaction'}

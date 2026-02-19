@@ -8,8 +8,6 @@ import Dashboard from './pages/Dashboard'
 import Summary from './pages/Summary'
 import About from './pages/About'
 
-// ─── Protected Route ──────────────────────────────────────────────────────────
-// Demonstrates: useContext (AuthContext), conditional routing
 function ProtectedRoute({ children }) {
   const { user, authLoading } = useAuth()
 
@@ -24,7 +22,6 @@ function ProtectedRoute({ children }) {
   return user ? children : <Navigate to="/login" replace />
 }
 
-// ─── App Layout ───────────────────────────────────────────────────────────────
 function AppLayout() {
   const { user } = useAuth()
   return (
@@ -62,7 +59,7 @@ function AppLayout() {
   )
 }
 
-// ─── Root: Context Providers wrap everything ──────────────────────────────────
+// Context Providers wrap everything
 export default function App() {
   return (
     <BrowserRouter>

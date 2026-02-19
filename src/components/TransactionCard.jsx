@@ -1,8 +1,7 @@
 import TransactionBadge from './TransactionBadge'
 
-// ─── TransactionCard ──────────────────────────────────────────────────────────
 // Prop drilling LEVEL 2: receives full `transaction` object + handlers from TransactionList
-// Passes `category` and `type` down to TransactionBadge (level 3)
+// Passes `category` and `type` down to TransactionBadge
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('en-IN', {
@@ -26,7 +25,6 @@ export default function TransactionCard({ transaction, onEdit, onDelete }) {
 
   return (
     <div className="flex items-center gap-3 p-3.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group animate-fade-in">
-      {/* Type indicator */}
       <div
         className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0 ${
           type === 'income'
@@ -37,19 +35,17 @@ export default function TransactionCard({ transaction, onEdit, onDelete }) {
         {type === 'income' ? '↑' : '↓'}
       </div>
 
-      {/* Main info */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">
           {description}
         </p>
         <div className="flex items-center gap-2 mt-0.5">
-          {/* Passing category + type down to TransactionBadge — prop drilling lvl 3 */}
+          {/* Passing category + type down to TransactionBadge */}
           <TransactionBadge category={category} type={type} />
           <span className="text-xs text-slate-400">{formatDate(date)}</span>
         </div>
       </div>
 
-      {/* Amount */}
       <span
         className={`font-mono font-semibold text-sm flex-shrink-0 ${
           type === 'income'
@@ -60,7 +56,6 @@ export default function TransactionCard({ transaction, onEdit, onDelete }) {
         {type === 'income' ? '+' : '-'}{formatAmount(amount)}
       </span>
 
-      {/* Actions — visible on hover */}
       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
         <button
           onClick={() => onEdit(transaction)} // handler drilled from Dashboard

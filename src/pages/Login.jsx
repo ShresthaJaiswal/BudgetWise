@@ -4,13 +4,11 @@ import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 
-// Demonstrates: useState, useEffect, useRef, axios, two-way binding, useContext
 export default function Login() {
   const { login, user } = useAuth()
   const { isDark, toggleTheme } = useTheme()
   const navigate = useNavigate()
 
-  // ── Two-way binding state ──────────────────────────────────────────────────
   const [name, setName] = useState('')
   const [currency, setCurrency] = useState('INR')
   const [loading, setLoading] = useState(false)
@@ -20,18 +18,16 @@ export default function Login() {
   // useRef: auto-focus name input on mount
   const nameRef = useRef(null)
 
-  // useEffect: redirect if already logged in
+  // redirect if already logged in
   useEffect(() => {
     if (user) navigate('/dashboard')
   }, [user, navigate])
 
-  // useEffect: fetch a motivational quote via axios on mount
   useEffect(() => {
     nameRef.current?.focus()
 
     const fetchQuote = async () => {
       try {
-        // Using a free API — demonstrates axios GET
         const res = await axios.get(
           'https://api.quotable.io/random?tags=success|motivational&maxLength=120'
         )
@@ -55,7 +51,6 @@ export default function Login() {
     setError('')
     setLoading(true)
 
-    // Simulate a short async "auth" delay
     await new Promise(resolve => setTimeout(resolve, 600))
 
     login({ name: name.trim(), currency })
@@ -65,7 +60,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-emerald-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950">
-      {/* Theme toggle */}
       <button
         onClick={toggleTheme}
         className="fixed top-4 right-4 w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 shadow border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"
@@ -106,7 +100,6 @@ export default function Login() {
           )}
 
           <form onSubmit={handleSubmit}>
-            {/* Name — two-way binding */}
             <div className="mb-4">
               <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                 Your Name
@@ -121,7 +114,6 @@ export default function Login() {
               />
             </div>
 
-            {/* Currency — two-way binding */}
             <div className="mb-5">
               <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                 Preferred Currency

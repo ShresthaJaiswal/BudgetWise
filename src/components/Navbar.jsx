@@ -2,7 +2,6 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 
-// Demonstrates: useContext (AuthContext + ThemeContext), React Router NavLink
 export default function Navbar() {
   const { user, logout } = useAuth()
   const { isDark, toggleTheme } = useTheme()
@@ -23,21 +22,17 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-        {/* Logo */}
         <span className="font-display font-bold text-xl text-emerald-600 dark:text-emerald-400">
           BudgetWise
         </span>
 
-        {/* Nav Links */}
         <div className="flex items-center gap-1">
           <NavLink to="/dashboard" className={navLinkClass}>Dashboard</NavLink>
           <NavLink to="/summary" className={navLinkClass}>Summary</NavLink>
           <NavLink to="/about" className={navLinkClass}>About</NavLink>
         </div>
 
-        {/* Right side: theme toggle + user */}
         <div className="flex items-center gap-3">
-          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
             className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
@@ -54,7 +49,6 @@ export default function Navbar() {
             )}
           </button>
 
-          {/* User + Logout */}
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs font-bold">
               {user?.name?.[0]?.toUpperCase()}

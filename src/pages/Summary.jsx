@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { useBudget } from '../hooks/useBudget'
 
-// ─── Simple bar chart using pure CSS/Tailwind ─────────────────────────────────
 function BarChart({ data }) {
   if (!data || data.length === 0) {
     return <p className="text-center text-slate-400 text-sm py-8">No data yet.</p>
@@ -34,7 +33,6 @@ function BarChart({ data }) {
   )
 }
 
-// ─── Category pie-like display ────────────────────────────────────────────────
 function CategoryBreakdown({ data }) {
   if (!data || data.length === 0) {
     return <p className="text-center text-slate-400 text-sm py-8">No expense data yet.</p>
@@ -42,7 +40,7 @@ function CategoryBreakdown({ data }) {
 
   const total = data.reduce((s, d) => s + d.amount, 0)
 
-  // useMemo: compute percentages only when data changes
+  // compute percentages only when data changes
   const withPct = useMemo(
     () => data.map(d => ({ ...d, pct: ((d.amount / total) * 100).toFixed(1) })),
     [data, total]
@@ -75,7 +73,6 @@ function CategoryBreakdown({ data }) {
   )
 }
 
-// ─── Summary Page ─────────────────────────────────────────────────────────────
 export default function Summary() {
   const {
     totalIncome,
@@ -86,7 +83,6 @@ export default function Summary() {
     transactions,
   } = useBudget()
 
-  // useMemo: savings rate, only recalculates when income/expenses change
   const savingsRate = useMemo(() => {
     if (totalIncome === 0) return 0
     return ((balance / totalIncome) * 100).toFixed(1)
