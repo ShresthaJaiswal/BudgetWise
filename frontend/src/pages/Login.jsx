@@ -15,7 +15,7 @@ export default function Login() {
   const [quote, setQuote] = useState(null)
   const [error, setError] = useState('')
 
-  // useRef: auto-focus name input on mount
+  // auto-focus name input on mount
   const nameRef = useRef(null)
 
   // redirect if already logged in

@@ -47,7 +47,7 @@ export function useBudget() {
       })
     return Object.entries(breakdown)
       .map(([category, amount]) => ({ category, amount }))
-      .sort((a, b) => b.amount - a.amount)
+      .sort((a, b) => b.amount - a.amount)       // {travel} 5000 - {food} 2000 → positive → Travel first
   }, [transactions])
 
   // for the chart
