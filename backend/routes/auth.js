@@ -29,12 +29,12 @@ router.post('/register', async(req, res)=>{
             },
         })
 
-        const token = jwt.sign(
-            {userId: user.id}, process.env.JWT_SECRET, {expiresIn: '7d'}
-        );
+        // const token = jwt.sign(
+        //     {userId: user.id}, process.env.JWT_SECRET, {expiresIn: '7d'}
+        // );
 
         res.status(201).json({ 
-            token,
+            // token,
             user: { id: user.id, name: user.name },
             message: 'User created successfully' 
         });
@@ -58,19 +58,19 @@ router.post('/login', async(req, res)=>{
             return res.status(400).json({ message: 'Invalid credentials'});
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(password, existingUser.password);
 
         if (!isMatch){
             return res.status(400).json({ message: 'Inavlid credentials' });
         }
 
         const token = jwt.sign(
-            {userId: user.id}, process.env.JWT_SECRET, {expiresIn: '7d'}
+            {userId: existingUser.id}, process.env.JWT_SECRET, {expiresIn: '7d'}
         );
 
         res.status(200).json({ 
             token,
-            user: { id: user.id, name: user.name },
+            user: { id: existingUser.id, name: existingUser.name },
             message: 'User logged in successfully' 
         });
 

@@ -3,17 +3,19 @@ const router = express.Router();
 import prisma from '../prisma/client.js';
 import { protect } from "../middleware/authMiddleware.js";
 
-// fetch all for logged in user
+// fetch all transactions for a user
 router.get('/', protect, async(req, res)=> {
     try{
+        // console.log(req.user.userId)
         const transactions = await prisma.transaction.findMany({
-            where: {userId: req.user.userId },
-            ordereBy: { date: 'desc' }
+            where: {userId: req.user.userId }, // userId references to the userId attribute defined in the token and user is the foreign key in transaction table
+            orderBy: { createdAt: 'desc' }
         })
-
+        console.log(transactions)
         res.json(transactions)
 
     } catch(err) {
+        console.error("TRANSACTION ERROR:", err);
         res.status(500).json({ message: 'Server error' })
     }
 })

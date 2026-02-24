@@ -14,6 +14,9 @@ import authRoutes from './routes/auth.js'
 app.use('/api/auth', authRoutes)
 import transactionRoutes from './routes/transactions.js'
 app.use('/api/transactions', transactionRoutes)
+app.get('/api/health', (req, res)=> {
+    res.json({ message: 'Server is running' })
+})
 
 // Allow frontend (5173) to talk to backend (5000)
 app.use(cors({

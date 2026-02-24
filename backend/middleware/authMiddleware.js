@@ -13,6 +13,7 @@ export function protect(req, res, next) {
         const token = authHeader.split(' ')[1];
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log(decoded);
 
         // now any user using this middleware can access the attached user info with the request
         req.user = decoded;
