@@ -5,44 +5,61 @@ import { CATEGORIES } from '../components/TransactionForm'
 import TransactionForm from '../components/TransactionForm'
 import TransactionList from '../components/TransactionList'
 import SummaryCards from '../components/SummaryCards'
+import { useGetTransactionQuery, useAddTransactionMutation, useEditTransactionMutation, useDeleteTransactionMutation } from '../store/api'
+import { useDispatch, useSelector } from 'react-redux'
+import { setFilter, setSearch, setCategoryFilter } from '../store/slices/transactionSlice'
+
+
+// Prop drilling ROOT — computed values from useBudget passed down from here
 
 export default function Dashboard() {
   const { user } = useAuth()
 
-  // All computed values + actions from our custom hook (useMemo lives here)
-  const {
-    filteredTransactions,
-    totalIncome,
-    totalExpenses,
-    balance,
+  const dispatch = useDispatch()
+  
+  // from Redux slice (local UI state)
+  const { filter, search, categoryFilter } = useSelector(state => state.transactions)
+
+  // from backend via RTK Query
+  const{ data: transactions = [], isLoading } = useGetTransactionQuery()
+  const [addTransaction] = useAddTransactionMutation()
+  const [editTransaction] = useEditTransactionMutation()
+  const [deleteTransaction] = useDeleteTransactionMutation()
+
+  // Computed values from useBudget (pure useMemo hook)
+  const { totalIncome, totalExpenses, balance, filteredTransactions } = useBudget(
+    transactions,
     filter,
     search,
-    categoryFilter,
-    addTransaction,
-    editTransaction,
-    deleteTransaction,
-    setFilter,
-    setSearch,
-    setCategoryFilter,
-  } = useBudget()
+    categoryFilter
+  )
 
-  // Local state: which transaction is being edited
+  // Local UI state: which transaction is being edited
   const [editData, setEditData] = useState(null)
 
-  const handleEdit = (transaction) => setEditData(transaction)
   const handleCancelEdit = () => setEditData(null)
 
-  const handleSubmit = (data) => {
-    if (editData) {
-      editTransaction(data)
-      setEditData(null)
-    } else {
-      addTransaction(data)
+  const handleSubmit = async (data) => {
+    try {
+      if (editData) {
+        await editTransaction({ id: editData.id, ...data }).unwrap()
+        setEditData(null)
+      } else {
+        await addTransaction(data).unwrap() // no need to manually update state — invalidatesTags does it automatically
+      }
+    } catch (err) {
+      console.error('Transaction error:', err)
     }
   }
 
-  const handleDelete = (id) => {
-    if (confirm('Delete this transaction?')) deleteTransaction(id)
+  const handleDelete = async (id) => {
+    if (confirm('Delete this transaction?')) {
+      try {
+        await deleteTransaction(id).unwrap()
+      } catch (err) {
+        console.error('Delete error:', err)
+      }
+    }
   }
 
   const greeting = () => {
@@ -50,6 +67,14 @@ export default function Dashboard() {
     if (h < 12) return 'Good morning'
     if (h < 17) return 'Good afternoon'
     return 'Good evening'
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (
@@ -99,14 +124,14 @@ export default function Dashboard() {
                 className="input-field text-sm mb-2"
                 placeholder="Search transactions..."
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={e => dispatch(setSearch(e.target.value))}
               />
 
               <div className="flex gap-1.5 flex-wrap">
                 {['all', 'income', 'expense'].map(f => (
                   <button
                     key={f}
-                    onClick={() => setFilter(f)}
+                    onClick={() => dispatch(setFilter(f))}
                     className={`text-xs px-3 py-1 rounded-full capitalize font-medium transition-all ${
                       filter === f
                         ? 'bg-emerald-500 text-white'
@@ -119,7 +144,7 @@ export default function Dashboard() {
                 <select
                   className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-none outline-none ml-auto"
                   value={categoryFilter}
-                  onChange={e => setCategoryFilter(e.target.value)}
+                  onChange={e => dispatch(setCategoryFilter(e.target.value))}
                 >
                   <option value="all">All Categories</option>
                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -133,7 +158,7 @@ export default function Dashboard() {
                 // drilled down (level 1)
                 transactions={filteredTransactions}
                 // handlers drilled down
-                onEdit={handleEdit}
+                onEdit={setEditData}
                 onDelete={handleDelete}
               />
             </div>

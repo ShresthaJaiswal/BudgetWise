@@ -1,9 +1,8 @@
-import { useMemo } from 'react'
-import { useTransactions, ACTIONS } from '../context/TransactionContext'
+// `useBudget.js` becomes just a `useMemo` computation hook — it reads from RTK Query's data and the Redux slice, but dispatches nothing itself.
 
-export function useBudget() {
-  const { state, dispatch } = useTransactions()
-  const { transactions, filter, search, categoryFilter } = state
+import { useMemo } from 'react'
+
+export function useBudget(transactions = [], filter = 'all', search = '', categoryFilter = 'all') {
 
   // Only recalculates when `transactions` changes & not on every render
   const totalIncome = useMemo(
@@ -27,7 +26,7 @@ export function useBudget() {
     [totalIncome, totalExpenses]
   )
 
-  // Filtered + searched transactions — recalculates only when deps change
+  // Filtered — recalculates only when dependencies change
   const filteredTransactions = useMemo(() => {
     return transactions
       .filter(t => filter === 'all' || t.type === filter)
@@ -50,11 +49,11 @@ export function useBudget() {
       .sort((a, b) => b.amount - a.amount)       // {travel} 5000 - {food} 2000 → positive → Travel first
   }, [transactions])
 
-  // for the chart
+  // for bar chart — last 6 months
   const monthlyData = useMemo(() => {
     const map = {}
     transactions.forEach(t => {
-      const date = new Date(t.date)
+      const date = new Date(t.createdAt)
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
       if (!map[key]) map[key] = { month: key, income: 0, expense: 0 }
       if (t.type === 'income') map[key].income += t.amount
@@ -62,45 +61,13 @@ export function useBudget() {
     })
     return Object.values(map).sort((a, b) => a.month.localeCompare(b.month)).slice(-6)
   }, [transactions])
-
-  // Dispatch helpers
-  const addTransaction = (transaction) =>
-    dispatch({ type: ACTIONS.ADD, payload: { ...transaction, id: crypto.randomUUID(), date: new Date().toISOString() } })
-
-  const deleteTransaction = (id) =>
-    dispatch({ type: ACTIONS.DELETE, payload: id })
-
-  const editTransaction = (transaction) =>
-    dispatch({ type: ACTIONS.EDIT, payload: transaction })
-
-  const setFilter = (filter) =>
-    dispatch({ type: ACTIONS.SET_FILTER, payload: filter })
-
-  const setSearch = (search) =>
-    dispatch({ type: ACTIONS.SET_SEARCH, payload: search })
-
-  const setCategoryFilter = (cat) =>
-    dispatch({ type: ACTIONS.SET_CATEGORY_FILTER, payload: cat })
-
+  
   return {
-    // state
-    transactions,
-    filteredTransactions,
-    filter,
-    search,
-    categoryFilter,
-    // computed
     totalIncome,
     totalExpenses,
     balance,
+    filteredTransactions,
     categoryBreakdown,
-    monthlyData,
-    // actions
-    addTransaction,
-    deleteTransaction,
-    editTransaction,
-    setFilter,
-    setSearch,
-    setCategoryFilter,
+    monthlyData
   }
 }

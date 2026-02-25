@@ -11,7 +11,6 @@ router.get('/', protect, async(req, res)=> {
             where: {userId: req.user.userId }, // userId references to the userId attribute defined in the token and user is the foreign key in transaction table
             orderBy: { createdAt: 'desc' }
         })
-        console.log(transactions)
         res.json(transactions)
 
     } catch(err) {

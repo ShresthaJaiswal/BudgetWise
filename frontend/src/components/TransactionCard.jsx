@@ -21,7 +21,7 @@ function formatAmount(amount) {
 
 export default function TransactionCard({ transaction, onEdit, onDelete }) {
   // Destructure the prop-drilled transaction object
-  const { id, description, amount, type, category, date } = transaction
+  const { id, description, amount, type, category, createdAt } = transaction
 
   return (
     <div className="flex items-center gap-3 p-3.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group animate-fade-in">
@@ -42,7 +42,7 @@ export default function TransactionCard({ transaction, onEdit, onDelete }) {
         <div className="flex items-center gap-2 mt-0.5">
           {/* Passing category + type down to TransactionBadge */}
           <TransactionBadge category={category} type={type} />
-          <span className="text-xs text-slate-400">{formatDate(date)}</span>
+          <span className="text-xs text-slate-400">{formatDate(createdAt)}</span>
         </div>
       </div>
 

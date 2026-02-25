@@ -5,7 +5,7 @@ const ThemeContext = createContext()
 export function ThemeProvider({ children }) {
   // initialize from localStorage, fallback to system preference
   const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('budgetwise_theme')
+    const saved = localStorage.getItem('bw_theme')
     if (saved) return saved === 'dark'
     return window.matchMedia('(prefers-color-scheme: dark)').matches
   })
@@ -18,7 +18,7 @@ export function ThemeProvider({ children }) {
     } else {
       root.classList.remove('dark')
     }
-    localStorage.setItem('budgetwise_theme', isDark ? 'dark' : 'light')
+    localStorage.setItem('bw_theme', isDark ? 'dark' : 'light')
   }, [isDark])
 
   const toggleTheme = () => setIsDark(prev => !prev)

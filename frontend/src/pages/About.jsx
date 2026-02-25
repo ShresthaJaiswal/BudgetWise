@@ -19,15 +19,15 @@ const concepts = [
   },
   {
     icon: '⚙️',
-    hook: 'useReducer',
-    where: 'TransactionContext',
-    desc: 'Manages complex transaction state with typed actions: ADD, DELETE, EDIT, SET_FILTER, SET_SEARCH.',
+    hook: 'useReducer → Redux slice',
+    where: 'store/transactionSlice.js',
+    desc: 'Filter, search, categoryFilter managed via Redux createSlice. CRUD replaced by RTK Query mutations.',
   },
   {
     icon: '🚀',
     hook: 'useMemo',
-    where: 'useBudget hook, Summary page',
-    desc: 'Computes totalIncome, totalExpenses, balance, filteredTransactions, categoryBreakdown only when dependencies change.',
+    where: 'useBudget hook, Dashboard, Summary page',
+    desc: 'Pure computation hook — useMemo for totals, balance, filtered list, category breakdown. Receives transactions from RTK Query as a parameter.',
   },
   {
     icon: '🎯',

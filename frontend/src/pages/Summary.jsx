@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useBudget } from '../hooks/useBudget'
+import { useGetTransactionQuery } from '../store/api'
 
 function BarChart({ data }) {
   if (!data || data.length === 0) {
@@ -74,14 +75,8 @@ function CategoryBreakdown({ data }) {
 }
 
 export default function Summary() {
-  const {
-    totalIncome,
-    totalExpenses,
-    balance,
-    categoryBreakdown,
-    monthlyData,
-    transactions,
-  } = useBudget()
+  const { data: transactions = [] } = useGetTransactionQuery()
+  const { categoryBreakdown, monthlyData, totalIncome, totalExpenses, balance } = useBudget(transactions)
 
   const savingsRate = useMemo(() => {
     if (totalIncome === 0) return 0

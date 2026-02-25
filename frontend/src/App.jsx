@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { TransactionProvider } from './context/TransactionContext'
 import Navbar from './components/Navbar'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -65,9 +64,7 @@ export default function App() {
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          <TransactionProvider>
-            <AppLayout />
-          </TransactionProvider>
+          <AppLayout />
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

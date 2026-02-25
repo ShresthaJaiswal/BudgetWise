@@ -8,7 +8,7 @@ export function AuthProvider({ children }) {
 
   // on mount, rehydrate auth from localStorage (simulating token check)
   useEffect(() => {
-    const savedUser = localStorage.getItem('budgetwise_user')
+    const savedUser = localStorage.getItem('bw_user')
     if (savedUser) {
       setUser(JSON.parse(savedUser))
     }
@@ -17,12 +17,13 @@ export function AuthProvider({ children }) {
 
   const login = (userData) => {
     setUser(userData)
-    localStorage.setItem('budgetwise_user', JSON.stringify(userData))
+    localStorage.setItem('bw_user', JSON.stringify(userData))
   }
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem('budgetwise_user')
+    localStorage.removeItem('bw_user')
+    localStorage.removeItem('bw_token')
   }
 
   return (

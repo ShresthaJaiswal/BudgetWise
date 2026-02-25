@@ -9,7 +9,7 @@ import jwt from 'jsonwebtoken';
 
 router.post('/register', async(req, res)=>{
     try{
-        const {name, email, password} = req.body;
+        const {name, email, password, currency} = req.body;
 
         const existingUser = await prisma.user.findUnique({
             where: {email},
@@ -26,6 +26,7 @@ router.post('/register', async(req, res)=>{
                 name,
                 email,
                 password: hashedPassword,
+                currency
             },
         })
 
@@ -70,7 +71,7 @@ router.post('/login', async(req, res)=>{
 
         res.status(200).json({ 
             token,
-            user: { id: existingUser.id, name: existingUser.name },
+            user: { id: existingUser.id, name: existingUser.name,  email: existingUser.email, currency: existingUser.currency },
             message: 'User logged in successfully' 
         });
 
