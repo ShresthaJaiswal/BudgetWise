@@ -17,15 +17,19 @@ const transactionSlice = createSlice({
         filter: 'all',
         search: '',
         categoryFilter: 'all',
+        dateFilter: 'all',
+        sortOrder: 'newest',
     },
     // A reducer is just: A function that takes the current state + an action and returns a new state.
     reducers: {
         setFilter: (state, action) => { state.filter = action.payload },
         setSearch: (state, action) => { state.search = action.payload },
         setCategory: (state, action) => { state.categoryFilter = action.payload },
-        //if updating multiple thingsor sending an object like in authSlice, use: action.payload.someField
+        setDateFilter: (state, action) => { state.dateFilter = action.payload },
+        setSortOrder: (state, action) => { state.sortOrder = action.payload },
+        //if updating multiple things or sending an object like in authSlice, use: action.payload.someField
     },
 })
 
-export const { setFilter, setSearch, setCategoryFilter } = transactionSlice.actions
+export const { setFilter, setSearch, setCategoryFilter, setDateFilter, setSortOrder } = transactionSlice.actions
 export default transactionSlice.reducer

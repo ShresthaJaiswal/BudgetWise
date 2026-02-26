@@ -1,28 +1,22 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { useSelector } from 'react-redux'
 import Navbar from './components/Navbar'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Summary from './pages/Summary'
 import About from './pages/About'
 
+// ProtectedRoute is basically a wrapper. children = <Dashboard />
 function ProtectedRoute({ children }) {
-  const { user, authLoading } = useAuth()
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
+  const user = useSelector(state => state.auth)
 
   return user ? children : <Navigate to="/login" replace />
+  // replace means don’t add the protected route to browser history. Without replace, user could press back and go to the protected page again.
 }
 
 function AppLayout() {
-  const { user } = useAuth()
+  const user = useSelector(state => state.auth)
   return (
     <div className="min-h-screen">
       {user && <Navbar />}
@@ -63,9 +57,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <AuthProvider>
-          <AppLayout />
-        </AuthProvider>
+        <AppLayout />
       </ThemeProvider>
     </BrowserRouter>
   )

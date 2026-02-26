@@ -1,27 +1,28 @@
 import { useState } from 'react'
 import { useBudget } from '../hooks/useBudget'
-import { useAuth } from '../context/AuthContext'
 import { CATEGORIES } from '../components/TransactionForm'
 import TransactionForm from '../components/TransactionForm'
 import TransactionList from '../components/TransactionList'
 import SummaryCards from '../components/SummaryCards'
 import { useGetTransactionQuery, useAddTransactionMutation, useEditTransactionMutation, useDeleteTransactionMutation } from '../store/api'
 import { useDispatch, useSelector } from 'react-redux'
-import { setFilter, setSearch, setCategoryFilter } from '../store/slices/transactionSlice'
+import { setFilter, setSearch, setCategoryFilter, setDateFilter, setSortOrder } from '../store/slices/transactionSlice'
 
 
 // Prop drilling ROOT — computed values from useBudget passed down from here
 
 export default function Dashboard() {
-  const { user } = useAuth()
+  const user = useSelector(state => state.auth.user)
 
   const dispatch = useDispatch()
   
   // from Redux slice (local UI state)
-  const { filter, search, categoryFilter } = useSelector(state => state.transactions)
+  const { filter, search, categoryFilter, dateFilter, sortOrder } = useSelector(state => state.transactions)
 
-  // from backend via RTK Query
-  const{ data: transactions = [], isLoading } = useGetTransactionQuery()
+  // Server state — from backend via RTK Query
+  const{ data: transactions = [], isLoading } = useGetTransactionQuery(undefined, {
+    skip: !user  // ← don't fetch if logged out
+  })
   const [addTransaction] = useAddTransactionMutation()
   const [editTransaction] = useEditTransactionMutation()
   const [deleteTransaction] = useDeleteTransactionMutation()
@@ -31,7 +32,9 @@ export default function Dashboard() {
     transactions,
     filter,
     search,
-    categoryFilter
+    categoryFilter,
+    dateFilter,
+    sortOrder
   )
 
   // Local UI state: which transaction is being edited
@@ -148,6 +151,25 @@ export default function Dashboard() {
                 >
                   <option value="all">All Categories</option>
                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+
+                <select
+                  className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-none outline-none"
+                  value={dateFilter}
+                  onChange={e => dispatch(setDateFilter(e.target.value))}>
+                  <option value="all">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="week">Last 7 Days</option>
+                  <option value="month">This Month</option>
+                  <option value="year">This Year</option>
+                </select>
+
+                <select
+                  className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-none outline-none"
+                  value={sortOrder}
+                  onChange={e => dispatch(setSortOrder(e.target.value))}>
+                  <option value="newest">Most Recent</option>
+                  <option value="oldest">Oldest First</option>
                 </select>
               </div>
             </div>

@@ -1,14 +1,19 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import { useDispatch, useSelector } from 'react-redux'
+import { clearUser } from '../store/slices/authSlice'
 
 export default function Navbar() {
-  const { user, logout } = useAuth()
+  const user = useSelector(state => state.auth.user)
+  // state.auth returns { user: {...}, token: '...' } — the whole slice. state.auth.user returns just { name, email, id, currency } which is what user?.name expects.
+  
   const { isDark, toggleTheme } = useTheme()
   const navigate = useNavigate()
 
+  const dispatch = useDispatch()
+
   const handleLogout = () => {
-    logout()
+    dispatch(clearUser())
     navigate('/login')
   }
 

@@ -11,6 +11,7 @@ export const CATEGORIES = [
   'Salary',
   'Freelance',
   'Investment',
+  'Refund',
   'Other',
 ]
 
@@ -122,7 +123,7 @@ export default function TransactionForm({ onSubmit, editData, onCancel }) {
           value={amount}
           onChange={e => setAmount(e.target.value)}
           min="0"
-          step="0.01"
+          step="1"
         />
       </div>
 

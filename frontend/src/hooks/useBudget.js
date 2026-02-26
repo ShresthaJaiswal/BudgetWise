@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 
-export function useBudget(transactions = [], filter = 'all', search = '', categoryFilter = 'all') {
+export function useBudget(transactions = [], filter = 'all', search = '', categoryFilter = 'all', dateFilter = 'all', sortOrder = 'newest') {
 
   // Only recalculates when `transactions` changes & not on every render
   const totalIncome = useMemo(
@@ -26,6 +26,8 @@ export function useBudget(transactions = [], filter = 'all', search = '', catego
     [totalIncome, totalExpenses]
   )
 
+  const now = new Date()
+
   // Filtered — recalculates only when dependencies change
   const filteredTransactions = useMemo(() => {
     return transactions
@@ -34,7 +36,36 @@ export function useBudget(transactions = [], filter = 'all', search = '', catego
       .filter(t =>
         t.description.toLowerCase().includes(search.toLowerCase())
       )
-  }, [transactions, filter, search, categoryFilter])
+      .filter(t => {
+        if (dateFilter === 'all') return true
+        const txDate = new Date(t.createdAt)
+        if (dateFilter === 'today') {
+          return txDate.toDateString() === now.toDateString()
+        }
+        if (dateFilter === 'week') {
+          const weekAgo = new Date()
+          weekAgo.setDate(now.getDate() - 7)
+          return txDate >= weekAgo
+        }
+        if (dateFilter === 'month') {
+          return (
+            txDate.getMonth() === now.getMonth() &&
+            txDate.getFullYear() === now.getFullYear()
+          )
+        }
+        if (dateFilter === 'year') {
+          return txDate.getFullYear() === now.getFullYear()
+        }
+        return true
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.createdAt) // It creates a Date object from the timestamp string stored in your transaction. 
+        // a.createdAt = "2026-02-25T10:36:29.975Z"
+        // new Date(a.date) = Feb 25, 2026, 10:36:29
+        const dateB = new Date(b.createdAt)
+        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB
+      })
+  }, [transactions, filter, search, categoryFilter, dateFilter, sortOrder])
 
   // Category breakdown for summary page
   const categoryBreakdown = useMemo(() => {

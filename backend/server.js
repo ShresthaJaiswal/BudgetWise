@@ -18,6 +18,9 @@ app.get('/api/health', (req, res)=> {
     res.json({ message: 'Server is running' })
 })
 
+import quoteRoutes from './routes/quote.js'
+app.use('/api', quoteRoutes)
+
 // Allow frontend (5173) to talk to backend (5000)
 app.use(cors({
     origin: 'http://localhost:5173',

@@ -9,8 +9,8 @@ export const budgetwiseApi = createApi({
     // Every request automatically attaches the token from localStorage
     baseQuery: fetchBaseQuery({
         baseUrl: 'http://localhost:5000/api',
-        prepareHeaders: (headers) => {
-            const token = localStorage.getItem('bw_token');
+        prepareHeaders: (headers, { getState }) => {
+            const token = getState().auth.token;
             if (token) {
                 headers.set('authorization', `Bearer ${token}`)
             }
@@ -48,7 +48,7 @@ export const budgetwiseApi = createApi({
             invalidatesTags: ['Transaction'], // auto refetches list after adding
         }),
         editTransaction: builder.mutation({
-            query: (id, ...body) => ({ url: `/transactions/${id}`, method: 'PUT', body }), // Because ${id} is a JavaScript template literal — it only works with backticks, not single or double quotes.
+            query: ({ id, ...body }) => ({ url: `/transactions/${id}`, method: 'PUT', body }), // Because ${id} is a JavaScript template literal — it only works with backticks, not single or double quotes.
             invalidatesTags: ['Transaction'],
         }),
         deleteTransaction: builder.mutation({

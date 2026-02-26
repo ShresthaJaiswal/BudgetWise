@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { useLoginMutation, useRegisterMutation } from '../store/api'
+import { useDispatch, useSelector } from 'react-redux'
+import { setUser } from '../store/slices/authSlice'
 
 export default function Login() {
-  const { login, user } = useAuth()
+  const user = useSelector(state => state.auth.user)
+  // state.auth returns { user: {...}, token: '...' } — the whole slice. state.auth.user returns just { name, email, id, currency } which is what user?.name expects.
+
   const { isDark, toggleTheme } = useTheme()
   const navigate = useNavigate()
+
+  const dispatch = useDispatch()
 
   // RTK Query mutations — isLoading replaces manual setLoading
   const [loginApi, { isLoading: loginLoading }] = useLoginMutation()
@@ -36,11 +41,9 @@ export default function Login() {
 
     const fetchQuote = async () => {
       try {
-        const res = await axios.get(
-          'https://api.quotable.io/random?tags=success|motivational&maxLength=120'
-        )
-        setQuote({ text: res.data.content, author: res.data.author })
-      } catch {
+        const res = await axios.get('http://localhost:5000/api/quote')
+        setQuote({ text: res.data.text, author: res.data.author })
+      } catch (err) {
         // Fallback quote if API is unavailable
         setQuote({
           text: 'A budget is telling your money where to go instead of wondering where it went.',
@@ -55,7 +58,10 @@ export default function Login() {
     e.preventDefault()
 
     // Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
     if (!email.trim()) return setError('Please enter your email.')
+    if (!emailRegex.test(email)) return setError('Please enter a valid email address.')
+    if (isRegisterMode && !name.trim()) return setError('Please enter your name.')
     if (!password.trim()) return setError('Please enter a password.')
 
     setError('')  // ← clear any previous error before making the request
@@ -64,13 +70,27 @@ export default function Login() {
       if (isRegisterMode) {
         // Register flow
         const res = await registerApi({ name: name.trim(), email, password, currency }).unwrap()
-        localStorage.setItem('bw_token', res.token)
-        login({ name: res.user.name, email: res.user.email, id: res.user.id, currency: res.user.currency })
+        dispatch(setUser({
+          token: res.token,        // ← add token here
+          user: {
+            name: res.user.name,
+            email: res.user.email,
+            id: res.user.id,
+            currency: res.user.currency
+          }
+        }))
       } else {
         // Login flow
         const res = await loginApi({ email, password }).unwrap()
-        localStorage.setItem('bw_token', res.token)
-        login({ name: res.user.name, email: res.user.email, id: res.user.id, currency: res.user.currency })
+        dispatch(setUser({
+          token: res.token,        // ← add token here
+          user: {
+            name: res.user.name,
+            email: res.user.email,
+            id: res.user.id,
+            currency: res.user.currency
+          }
+        }))
       }
       navigate('/dashboard')
 
@@ -145,7 +165,7 @@ export default function Login() {
               </label>
               <input
                 ref={nameRef}
-                type="text"
+                type="email"
                 className="input-field"
                 placeholder="e.g. xyz123@gmail.com"
                 value={email}
