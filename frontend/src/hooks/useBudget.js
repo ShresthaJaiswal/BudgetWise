@@ -8,7 +8,7 @@ export function useBudget(transactions = [], filter = 'all', search = '', catego
   const totalIncome = useMemo(
     () =>
       transactions
-        .filter(t => t.type === 'income')
+        .filter(t => t.type.name === 'income')
         .reduce((sum, t) => sum + t.amount, 0),
     [transactions]
   )
@@ -16,7 +16,7 @@ export function useBudget(transactions = [], filter = 'all', search = '', catego
   const totalExpenses = useMemo(
     () =>
       transactions
-        .filter(t => t.type === 'expense')
+        .filter(t => t.type.name === 'expense')
         .reduce((sum, t) => sum + t.amount, 0),
     [transactions]
   )
@@ -31,8 +31,8 @@ export function useBudget(transactions = [], filter = 'all', search = '', catego
   // Filtered — recalculates only when dependencies change
   const filteredTransactions = useMemo(() => {
     return transactions
-      .filter(t => filter === 'all' || t.type === filter)
-      .filter(t => categoryFilter === 'all' || t.category === categoryFilter)
+      .filter(t => filter === 'all' || t.type.name === filter)
+      .filter(t => categoryFilter === 'all' || t.category.name === categoryFilter)
       .filter(t =>
         t.description.toLowerCase().includes(search.toLowerCase())
       )
@@ -71,9 +71,9 @@ export function useBudget(transactions = [], filter = 'all', search = '', catego
   const categoryBreakdown = useMemo(() => {
     const breakdown = {}
     transactions
-      .filter(t => t.type === 'expense')
+      .filter(t => t.type.name === 'expense')
       .forEach(t => {
-        breakdown[t.category] = (breakdown[t.category] || 0) + t.amount
+        breakdown[t.category.name] = (breakdown[t.category.name] || 0) + t.amount
       })
     return Object.entries(breakdown)
       .map(([category, amount]) => ({ category, amount }))

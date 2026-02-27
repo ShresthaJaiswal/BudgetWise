@@ -1,25 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-
-export const CATEGORIES = [
-  'Food & Dining',
-  'Transport',
-  'Shopping',
-  'Housing',
-  'Health',
-  'Entertainment',
-  'Education',
-  'Salary',
-  'Freelance',
-  'Investment',
-  'Refund',
-  'Other',
-]
+import { useGetCategoriesQuery, useGetTypesQuery } from '../store/api'
 
 export default function TransactionForm({ onSubmit, editData, onCancel }) {
+
+  // Fetch categories and types for the dropdowns
+  const { data: categories = [] } = useGetCategoriesQuery()
+  const { data: types = [] } = useGetTypesQuery()
+
+  // Local form state with two-way binding
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
-  const [type, setType] = useState('expense')
-  const [category, setCategory] = useState('Food & Dining')
+  const [type, setType] = useState(types[0]?.id || null)
+  const [category, setCategory] = useState(categories[0]?.id || null)
   const [error, setError] = useState('')
 
   // auto-focus the description input when the form mounts or edit mode opens
@@ -35,8 +27,8 @@ export default function TransactionForm({ onSubmit, editData, onCancel }) {
     } else {
       setDescription('')
       setAmount('')
-      setType('expense')
-      setCategory('Food & Dining')
+      setType(types[0]?.id || null)
+      setCategory(categories[0]?.id || null)
     }
     // Auto-focus via ref when form appears
     descriptionRef.current?.focus()
@@ -80,20 +72,20 @@ export default function TransactionForm({ onSubmit, editData, onCancel }) {
       )}
 
       <div className="flex gap-2 mb-4">
-        {['expense', 'income'].map(t => (
+        {types.map(t => (
           <button
-            key={t}
+            key={t.id}
             type="button"
-            onClick={() => setType(t)} // two-way: updates state on click
+            onClick={() => setType(t.id)} // two-way: updates state on click
             className={`flex-1 py-2 rounded-xl text-sm font-medium capitalize transition-all duration-200 ${
-              type === t
-                ? t === 'income'
+              type === t.id
+                ? t.name === 'income'
                   ? 'bg-emerald-500 text-white'
                   : 'bg-rose-500 text-white'
                 : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
             }`}
           >
-            {t === 'income' ? '↑ Income' : '↓ Expense'}
+            {t.name === 'income' ? '↑ Income' : '↓ Expense'}
           </button>
         ))}
       </div>
@@ -136,8 +128,8 @@ export default function TransactionForm({ onSubmit, editData, onCancel }) {
           value={category}
           onChange={e => setCategory(e.target.value)}
         >
-          {CATEGORIES.map(c => (
-            <option key={c} value={c}>{c}</option>
+          {categories.map(c => (
+            <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
       </div>

@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { useBudget } from '../hooks/useBudget'
-import { CATEGORIES } from '../components/TransactionForm'
 import TransactionForm from '../components/TransactionForm'
 import TransactionList from '../components/TransactionList'
 import SummaryCards from '../components/SummaryCards'
-import { useGetTransactionQuery, useAddTransactionMutation, useEditTransactionMutation, useDeleteTransactionMutation } from '../store/api'
+import { useGetTransactionQuery, useAddTransactionMutation, useEditTransactionMutation, useDeleteTransactionMutation, useGetTypesQuery, useGetCategoriesQuery, } from '../store/api'
 import { useDispatch, useSelector } from 'react-redux'
 import { setFilter, setSearch, setCategoryFilter, setDateFilter, setSortOrder } from '../store/slices/transactionSlice'
 
@@ -20,6 +19,8 @@ export default function Dashboard() {
   const { filter, search, categoryFilter, dateFilter, sortOrder } = useSelector(state => state.transactions)
 
   // Server state — from backend via RTK Query
+  const { data: types = [] } = useGetTypesQuery()
+  const { data: categories = [] } = useGetCategoriesQuery()
   const{ data: transactions = [], isLoading } = useGetTransactionQuery(undefined, {
     skip: !user  // ← don't fetch if logged out
   })
@@ -131,7 +132,7 @@ export default function Dashboard() {
               />
 
               <div className="flex gap-1.5 flex-wrap">
-                {['all', 'income', 'expense'].map(f => (
+                {['all', ...types.map(t => t.name)].map(f => (
                   <button
                     key={f}
                     onClick={() => dispatch(setFilter(f))}
@@ -144,13 +145,14 @@ export default function Dashboard() {
                     {f}
                   </button>
                 ))}
+
                 <select
                   className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-none outline-none ml-auto"
                   value={categoryFilter}
                   onChange={e => dispatch(setCategoryFilter(e.target.value))}
                 >
                   <option value="all">All Categories</option>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
 
                 <select

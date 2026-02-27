@@ -9,6 +9,10 @@ router.get('/', protect, async(req, res)=> {
         // console.log(req.user.userId)
         const transactions = await prisma.transaction.findMany({
             where: {userId: req.user.userId }, // userId references to the userId attribute defined in the token and user is the foreign key in transaction table
+            include: {
+                type: true,      // ← joins transaction_type table
+                category: true,  // ← joins transaction_category table
+            },
             orderBy: { createdAt: 'desc' }
         })
         res.json(transactions)
@@ -22,11 +26,14 @@ router.get('/', protect, async(req, res)=> {
 // create new transaction
 router.post('/', protect, async(req, res)=> {
     try{
-        const { type, description, amount, category} = req.body
+        const { type_id, description, amount, category_id } = req.body
 
         const newTransaction = await prisma.transaction.create({
             data: {
-                type, description, amount, category, userId: req.user.userId
+                type_id, description, amount, category_id, 
+                user_id: req.user.userId, // userId from token
+                createdBy: req.user.userId,
+                updatedBy: req.user.userId,
                 // userId since the token identifies you, but the DB still needs to store who owns each transaction permanantly
             }
         })
@@ -41,7 +48,7 @@ router.post('/', protect, async(req, res)=> {
 // edit a transaction
 router.put('/:id', protect, async(req, res)=> {
     try{
-        const {type, description, amount, category } = req.body
+        const {type_id, description, amount, category_id } = req.body
 
         const transaction = await prisma.transaction.update({
             where: {
@@ -51,7 +58,10 @@ router.put('/:id', protect, async(req, res)=> {
                 userId: req.user.userId // Transaction must belong to the logged-in user
                 // This value comes from 'protect'
             },
-            data: { type, description, amount, category }
+            data: { type_id, description, amount, category_id, 
+                updatedBy: req.user.userId // ← track who edited 
+            },
+            include: { type: true, category: true }
         })
 
         res.json(transaction)

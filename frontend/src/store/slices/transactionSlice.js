@@ -14,7 +14,7 @@ const transactionSlice = createSlice({
         // 1. It's not UI state — we are only holding those
         // 2. Redux resets on refresh — if you stored the token in Redux, every page refresh would wipe it and log the user out
         // 3. RTK Query already handles it — in api.js the prepareHeaders function reads the token from localStorage automatically on every single request
-        filter: 'all',
+        filter: 'expense',
         search: '',
         categoryFilter: 'all',
         dateFilter: 'all',

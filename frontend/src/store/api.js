@@ -55,6 +55,14 @@ export const budgetwiseApi = createApi({
             query: (id) => ({ url: `/transactions/${id}`, method: 'DELETE' }),
             invalidatesTags: ['Transaction'],
         }),
+        
+        // lookup tables
+        getTypes: builder.query({
+            query: () => '/types',
+        }),
+        getCategories: builder.query({
+            query: () => '/categories',
+        }),
     }),
 });
 
@@ -66,4 +74,6 @@ export const {
   useAddTransactionMutation,
   useEditTransactionMutation,
   useDeleteTransactionMutation,
+  useGetTypesQuery,
+  useGetCategoriesQuery,
 } = budgetwiseApi

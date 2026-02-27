@@ -7,24 +7,45 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
+model user {
   id               Int           @id @default(autoincrement())
   name             String
   email            String        @unique
   password         String
   currency         String        @default("INR")
-  createdAt        DateTime      @default(now())
-  transactions     Transaction[]
+  createdAt        DateTime      @default(now())  @map("created_at")
+  updatedAt        DateTime      @updatedAt  @map("updated_at")
+  transactions     transactions[]
 }
 
-model Transaction {
+model transactions {
   id              Int        @id @default(autoincrement())
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  type            String
-  category        String
+  createdAt       DateTime   @default(now())  @map("created_at")
+  createdBy       Int        @map("created_by")  // stores user_id of who created it
+  updatedAt       DateTime   @updatedAt  @map("updated_at")
+  updatedBy       Int        @map("updated_by")  // stores user_id of who last updated it
   description     String
   amount          Float
-  userId          Int
-  user            User       @relation(fields: [userId], references: [id])  // just a relation for foreign key
+
+  user_id         Int
+  type_id         Int
+  category_id     Int
+
+  user            user                  @relation(fields: [user_id], references: [id])  // just a relation for foreign key
+  type            transaction_type      @relation(fields: [type_id], references: [id])
+  category        transaction_category  @relation(fields: [category_id], references: [id])
+}
+
+model transaction_type {
+  id              Int           @id @default(autoincrement())
+  name            String        @unique  // 'income' or 'expense'
+  created_at      DateTime      @default(now())
+  transactions    transactions[]
+}
+
+model transaction_category {
+  id              Int           @id @default(autoincrement())
+  name            String        @unique  // 'Food & Dining', 'Transport' etc
+  created_at      DateTime      @default(now())
+  transactions    transactions[]
 }
