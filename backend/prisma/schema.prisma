@@ -49,3 +49,11 @@ model transaction_category {
   created_at      DateTime      @default(now())
   transactions    transactions[]
 }
+
+model password_reset {
+  id              Int      @id @default(autoincrement())
+  email           String
+  otp             String
+  createdAt       DateTime @default(now()) @map("created_at")
+  expiresAt       DateTime @map("expires_at")
+}

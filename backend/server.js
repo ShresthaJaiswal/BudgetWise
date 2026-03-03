@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import lookupRoutes from './routes/lookup.js'
+import passwordResetRoutes from './routes/passwordReset.js'
 
 const app = express()
 // parse incoming JSON request bodies
@@ -19,6 +20,7 @@ app.get('/api/health', (req, res)=> {
     res.json({ message: 'Server is running' })
 })
 app.use('/api', lookupRoutes)
+app.use('/api/auth', passwordResetRoutes)
 
 import quoteRoutes from './routes/quote.js'
 app.use('/api', quoteRoutes)
