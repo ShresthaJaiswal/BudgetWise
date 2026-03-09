@@ -87,7 +87,7 @@ export function useBudget(transactions = [], filter = 'all', search = '', catego
       const date = new Date(t.createdAt)
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
       if (!map[key]) map[key] = { month: key, income: 0, expense: 0 }
-      if (t.type === 'income') map[key].income += t.amount
+      if (t.type.name === 'income') map[key].income += t.amount
       else map[key].expense += t.amount
     })
     return Object.values(map).sort((a, b) => a.month.localeCompare(b.month)).slice(-6)

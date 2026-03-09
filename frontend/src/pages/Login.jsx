@@ -478,6 +478,23 @@ export default function Login() {
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
                 />
+
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mt-3 mb-1">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  className="input-field"
+                  placeholder="Confirm password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+
+                {error && (
+                  <div className="error-message">
+                    {error}
+                  </div>
+                )}
               </div>
 
               <button

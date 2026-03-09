@@ -10,8 +10,8 @@ export default function TransactionForm({ onSubmit, editData, onCancel }) {
   // Local form state with two-way binding
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
-  const [type, setType] = useState(types[0]?.id || null)
-  const [category, setCategory] = useState(categories[0]?.id || null)
+  const [type, setType] = useState(null)
+  const [category, setCategory] = useState(null)
   const [error, setError] = useState('')
 
   // auto-focus the description input when the form mounts or edit mode opens
@@ -22,31 +22,31 @@ export default function TransactionForm({ onSubmit, editData, onCancel }) {
     if (editData) {
       setDescription(editData.description)
       setAmount(String(editData.amount))
-      setType(editData.type)
-      setCategory(editData.category)
+      setType(Number(editData.type_id))
+      setCategory(Number(editData.category_id))  // ensure it's always a number
     } else {
       setDescription('')
       setAmount('')
-      setType(types[0]?.id || null)
-      setCategory(categories[0]?.id || null)
+      setType(2)
+      setCategory(null)
     }
     // Auto-focus via ref when form appears
     descriptionRef.current?.focus()
-  }, [editData])
+  }, [editData, types])
 
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!description.trim()) return setError('Please enter a description.')
     if (!amount || isNaN(amount) || Number(amount) <= 0)
       return setError('Please enter a valid positive amount.')
-
+    
     setError('')
     onSubmit({
       ...(editData && { id: editData.id, date: editData.date }),
       description: description.trim(),
       amount: parseFloat(amount),
-      type,
-      category,
+      type_id: type,
+      category_id: category,
     })
 
     if (!editData) {
@@ -125,9 +125,13 @@ export default function TransactionForm({ onSubmit, editData, onCancel }) {
         </label>
         <select
           className="input-field"
-          value={category}
-          onChange={e => setCategory(e.target.value)}
+          value={category || ""}
+          onChange={e => setCategory(Number(e.target.value))} // e.target.value always returns a string regardless of what value={c.id} is.
+          // So even though c.id is a number like 3, when selected it becomes "3" (string).
         >
+          <option value="" disabled>
+            Select a Category
+          </option>
           {categories.map(c => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
