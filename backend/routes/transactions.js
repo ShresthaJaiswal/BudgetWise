@@ -6,9 +6,12 @@ import { protect } from "../middleware/authMiddleware.js";
 // fetch all transactions for a user
 router.get('/', protect, async(req, res)=> {
     try{
-        // console.log(req.user.userId)
-        const transactions = await prisma.transaction.findMany({
-            where: {userId: req.user.userId }, // userId references to the userId attribute defined in the token and user is the foreign key in transaction table
+        console.log(req.user.userId)
+        const transactions = await prisma.transactions.findMany({
+            where: {
+                user_id: req.user.userId,
+                status: 1  // ← only fetch active, ignore soft deleted
+             }, // userId references to the userId attribute defined in the token and user is the foreign key in transaction table
             include: {
                 type: true,      // ← joins transaction_type table
                 category: true,  // ← joins transaction_category table
@@ -26,21 +29,22 @@ router.get('/', protect, async(req, res)=> {
 // create new transaction
 router.post('/', protect, async(req, res)=> {
     try{
-        const { type_id, description, amount, category_id } = req.body
-
-        const newTransaction = await prisma.transaction.create({
+        const { type_id, description, amount , category_id} = req.body
+        const newTransaction = await prisma.transactions.create({
             data: {
-                type_id, description, amount, category_id, 
+                type_id, description, amount, category_id,
                 user_id: req.user.userId, // userId from token
-                createdBy: req.user.userId,
-                updatedBy: req.user.userId,
+                createdBy: req.user.userId, // track who created the transaction
+                updatedBy: req.user.userId  // track who last updated the transaction
                 // userId since the token identifies you, but the DB still needs to store who owns each transaction permanantly
             }
         })
+        console.log(req.body)
 
         res.status(201).json(newTransaction)
 
     } catch(err) {
+        console.error("CREATE TRANSACTION ERROR:", err);
         res.status(500).json({ message: 'Server error' })
     }
 })
@@ -50,12 +54,12 @@ router.put('/:id', protect, async(req, res)=> {
     try{
         const {type_id, description, amount, category_id } = req.body
 
-        const transaction = await prisma.transaction.update({
+        const transaction = await prisma.transactions.update({
             where: {
                 id: Number(req.params.id), // Find the transaction whose ID matches the one in the URL
                 // We convert it to a number since URL params are strings and our Prisma schema has id Int
                 // comes from '/:id'
-                userId: req.user.userId // Transaction must belong to the logged-in user
+                user_id: req.user.userId // Transaction must belong to the logged-in user
                 // This value comes from 'protect'
             },
             data: { type_id, description, amount, category_id, 
@@ -73,10 +77,13 @@ router.put('/:id', protect, async(req, res)=> {
 
 router.delete('/:id', protect, async(req, res)=> {
     try{
-        await prisma.transaction.delete({
+        await prisma.transactions.update({
             where: {
                 id: Number(req.params.id),
-                userId: req.user.userId
+                user_id: req.user.userId
+            },
+            data: {
+                status: 0  // ← soft delete
             }
         })
 

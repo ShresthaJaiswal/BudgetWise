@@ -31,15 +31,22 @@ model transactions {
   type_id         Int
   category_id     Int
 
+  status          Int        @default(1)
+
   user            user                  @relation(fields: [user_id], references: [id])  // just a relation for foreign key
   type            transaction_type      @relation(fields: [type_id], references: [id])
   category        transaction_category  @relation(fields: [category_id], references: [id])
+
+  @@index([type_id])
+  @@index([category_id])  // But right now your type/category filtering happens in useBudget on the frontend via useMemo — not in the database query. So those indexes are essentially unused at the moment.
+  @@index([user_id, status])  // Composite Index - every transaction fetch filters by these two columns together. PostgreSQL can use this index to instantly narrow down to "all active transactions for this user" without scanning the whole table.
 }
 
 model transaction_type {
   id              Int           @id @default(autoincrement())
   name            String        @unique  // 'income' or 'expense'
   created_at      DateTime      @default(now())
+  status          Int           @default(1)
   transactions    transactions[]
 }
 
@@ -47,6 +54,7 @@ model transaction_category {
   id              Int           @id @default(autoincrement())
   name            String        @unique  // 'Food & Dining', 'Transport' etc
   created_at      DateTime      @default(now())
+  status          Int           @default(1)  // When Prisma sees a field with no default and you don't pass it in the data object, it throws Argument 'status' is missing — it can't guess what value to use.
   transactions    transactions[]
 }
 

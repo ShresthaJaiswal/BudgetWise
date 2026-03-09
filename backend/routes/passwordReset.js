@@ -1,7 +1,7 @@
 import express from 'express'
 import bcrypt from 'bcryptjs'
 import prisma from '../prisma/client.js'
-import { sendOTPEmail } from '../utils/mailer.js'
+import { sendOTPEmail, sendResetEmail } from '../utils/mailer.js'
 import crypto from 'crypto'
 
 const router = express.Router()
@@ -34,7 +34,7 @@ router.post('/forgot-password', async (req, res) => {
     console.log('Created new OTP:', otp)
 
     await sendOTPEmail(email, otp)
-    console.log('Email sent')
+    console.log('Email for OTP sent')
 
     res.json({ message: 'If this email exists, an OTP has been sent.' })
 
@@ -99,6 +99,9 @@ router.post('/reset-password', async (req, res) => {
     })
 
     await prisma.password_reset.deleteMany({ where: { email } })
+
+    await sendResetEmail(email)
+    console.log('Email for password reset sent')
 
     res.json({ message: 'Password reset successfully.' })
 
