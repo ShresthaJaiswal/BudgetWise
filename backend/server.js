@@ -1,15 +1,14 @@
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
+import 'dotenv/config'
 import lookupRoutes from './routes/lookup.js'
 import passwordResetRoutes from './routes/passwordReset.js'
+import { errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
 // parse incoming JSON request bodies
 app.use(express.json())
 app.use(cors())
-
-dotenv.config()
 
 // Routes
 import authRoutes from './routes/auth.js'
@@ -36,13 +35,7 @@ app.use((req, res) => {
     res.status(404).json({ message: 'Route not found'})
 })
 
-// Global error handler
-// If any route throws an unhandled error, it lands here
-// next(error) in any route will trigger this
-app.use((err, req, res, next) => {
-    console.error(err.stack)
-    res.status(500).json({ message: 'Something went wrong', error: err.message })
-})
+app.use(errorHandler)
 
 // Start server
 const PORT = process.env.PORT || 5000

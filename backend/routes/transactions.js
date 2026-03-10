@@ -2,6 +2,7 @@ import express from 'express'
 const router = express.Router();
 import prisma from '../prisma/client.js';
 import { protect } from "../middleware/authMiddleware.js";
+import logger from '../utils/logger.js'
 
 // fetch all transactions for a user
 router.get('/', protect, async(req, res)=> {
@@ -21,7 +22,7 @@ router.get('/', protect, async(req, res)=> {
         res.json(transactions)
 
     } catch(err) {
-        console.error("TRANSACTION ERROR:", err);
+        logger.error({ message: 'Failed to fetch transactions', error: err.message, userId: req.user?.userId })
         res.status(500).json({ message: 'Server error' })
     }
 })
@@ -44,7 +45,7 @@ router.post('/', protect, async(req, res)=> {
         res.status(201).json(newTransaction)
 
     } catch(err) {
-        console.error("CREATE TRANSACTION ERROR:", err);
+       logger.error({ message: 'Failed to create transaction', error: err.message, userId: req.user?.userId, body: req.body })
         res.status(500).json({ message: 'Server error' })
     }
 })
@@ -71,6 +72,7 @@ router.put('/:id', protect, async(req, res)=> {
         res.json(transaction)
 
     } catch(err) {
+        logger.error({ message: 'Failed to update transaction', error: err.message, userId: req.user?.userId, transactionId: req.params.id })
         res.status(500).json({ message: 'Server error' })
     }
 })
@@ -90,6 +92,7 @@ router.delete('/:id', protect, async(req, res)=> {
         res.json({ message: 'Transaction Deleted '})
 
     } catch(err) {
+        logger.error({ message: 'Failed to delete transaction', error: err.message, userId: req.user?.userId, transactionId: req.params.id })
         res.status(500).json({ message: 'Server error' })
     }
 })

@@ -38,6 +38,7 @@ export default function Login() {
   const [otp, setOtp] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [noAccount, setNoAccount] = useState(false)
 
   // feedback
   const [quote, setQuote] = useState(null)
@@ -76,6 +77,7 @@ export default function Login() {
     setStep(newStep)
     setError('')
     setSuccessMsg('')
+    setNoAccount(false) // reset on every step change
   }
 
   const handleSubmit = async (e) => {
@@ -140,12 +142,17 @@ export default function Login() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault()
     if (!otp.trim()) return setError('Please enter the OTP.')
+    if (otp.length !== 6) return setError('OTP must be 6 digits.')
     setError('')
     try {
       await verifyOtp({ email: resetEmail, otp }).unwrap()
       goToStep('reset-password')
     } catch (err) {
       setError(err.data?.message || 'Invalid OTP.')
+      setOtp('')
+      if (err.data?.redirect === 'forgot') {
+        setNoAccount(true)  // show register/login options instead of resend
+      }
     }
   }
 
@@ -168,15 +175,18 @@ export default function Login() {
       setConfirmPassword('')
       setResetEmail('')
 
-      setSuccessMsg('Password reset successfully. Please sign in.')
-
-      // redirect after 2 seconds
       setTimeout(() => {
         goToStep('login')
-      }, 2000)
+        setSuccessMsg('Password reset successfully. Please sign in.')
+      }, 3000)
 
     } catch (err) {
       setError(err?.data?.message || 'Something went wrong.')
+      setNewPassword('')  // clear on failure
+      setConfirmPassword('')
+      if(err.data?.redirect === 'forgot') {
+        setTimeout(() => {goToStep('forgot')}, 3000)
+      }
     }
   }
 
@@ -275,7 +285,7 @@ export default function Login() {
               <p className="text-right mb-3">
                 <button
                   type="button"
-                  onClick={() => goToStep('forgot')}
+                  onClick={() => { goToStep('forgot'); setOtp('') }}
                   className="text-xs text-emerald-500 hover:text-emerald-600">
                   Forgot password?
                 </button>
@@ -431,7 +441,7 @@ export default function Login() {
                 </label>
                 <input
                   type="text"
-                  className="input-field tracking-widest text-center text-lg font-mono"
+                  className="input-field tracking-widest text-left text-lg font-mono"
                   placeholder="000000"
                   maxLength={6}
                   value={otp}
@@ -449,15 +459,38 @@ export default function Login() {
                 ) : 'Verify OTP →'}
               </button>
 
-              <p className="text-center text-xs text-slate-400 mt-4">
-                Didn't receive it?{' '}
-                <button
-                  type="button"
-                  onClick={() => goToStep('forgot')}
-                  className="text-emerald-500 hover:text-emerald-600">
-                  Resend OTP
-                </button>
-              </p>
+              {/* conditionally show different footer based on noAccount */}
+              {noAccount ? (
+                <div className="text-center text-xs text-slate-400 mt-4 space-y-2">
+                  <p>
+                    <button
+                      type="button"
+                      onClick={() => { goToStep('register'); setEmail(resetEmail) }}  // prefill email
+                      className="text-emerald-500 hover:text-emerald-600 font-medium">
+                      Register with this email
+                    </button>
+                  </p>
+                  <p>
+                    or{' '}
+                    <button
+                      type="button"
+                      onClick={() => { goToStep('forgot'); setOtp('') }}
+                      className="text-emerald-500 hover:text-emerald-600">
+                      Login with another email
+                    </button>
+                  </p>
+                </div>
+              ) : (
+                <p className="text-center text-xs text-slate-400 mt-4">
+                  Didn't receive it?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { goToStep('forgot'); setOtp('') }}
+                    className="text-emerald-500 hover:text-emerald-600">
+                    Resend OTP
+                  </button>
+                </p>
+              )}
             </form>
           )}
 
@@ -489,12 +522,6 @@ export default function Login() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
-
-                {error && (
-                  <div className="error-message">
-                    {error}
-                  </div>
-                )}
               </div>
 
               <button

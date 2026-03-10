@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import prisma from '../prisma/client.js'
 import { sendOTPEmail, sendResetEmail } from '../utils/mailer.js'
 import crypto from 'crypto'
+import logger from '../utils/logger.js'
 
 const router = express.Router()
 
@@ -34,12 +35,12 @@ router.post('/forgot-password', async (req, res) => {
     console.log('Created new OTP:', otp)
 
     await sendOTPEmail(email, otp)
-    console.log('Email for OTP sent')
+    logger.info({ message: 'OTP sent', email })
 
     res.json({ message: 'If this email exists, an OTP has been sent.' })
 
   } catch (error) {
-    console.error('Forgot password error:', error)
+    logger.error({ message: 'Forgot password error', error: error.message, email: req.body.email, url: req.originalUrl })
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 })
@@ -54,7 +55,7 @@ router.post('/verify-otp', async (req, res) => {
     })
 
     if (!record) {
-      return res.status(400).json({ message: 'No OTP found for this email.' })
+      return res.status(400).json({ message: 'OTP expired or not requested. Please try again.', redirect: 'forgot' })
     }
 
     if (record.otp !== otp) {
@@ -67,6 +68,7 @@ router.post('/verify-otp', async (req, res) => {
       return res.status(400).json({ message: 'OTP has expired. Please request a new one.' })
     }
 
+    logger.info({ message: 'OTP verified', email })
     res.json({ message: 'OTP verified successfully.' })
 
   } catch (error) {
@@ -78,34 +80,46 @@ router.post('/verify-otp', async (req, res) => {
 router.post('/reset-password', async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body
+    console.log('Reset password body:', { email, otp, newPassword })
 
     const record = await prisma.password_reset.findFirst({
       where: { email }
     })
+    console.log('Record found:', record)
+    console.log('OTP provided:', otp)
+    console.log('OTP in DB:', record?.otp)
+    console.log('OTP match:', record?.otp === otp)
+    console.log('Expired:', new Date() > record?.expiresAt)
 
     // Re-verify OTP before actually changing password
     // The reason we re-verify on the backend in /reset-password is security — without it, someone could skip the /verify-otp call entirely and hit /reset-password directly via Postman with a guessed OTP. Re-checking on the final step ensures the OTP was genuinely verified before the password changes.
     // So from the user's perspective — they type the OTP once. From the backend's perspective — it checks it twice.
     if (!record || record.otp !== otp || new Date() > record.expiresAt) {
-      return res.status(400).json({ message: 'Invalid or expired OTP.' })
+      logger.warn({ message: 'Invalid OTP attempt', email })
+      return res.status(400).json({ message: 'Invalid or expired OTP. Please try again.', redirect: 'forgot' })
     }
 
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10)
+    console.log('Password hashed')
 
     await prisma.user.update({
       where: { email },
       data: { password: hashedPassword }
     })
+    console.log('User updated')
 
     await prisma.password_reset.deleteMany({ where: { email } })
+    console.log('OTP deleted')
 
     await sendResetEmail(email)
     console.log('Email for password reset sent')
 
+    logger.info({ message: 'Password reset successful', email })
     res.json({ message: 'Password reset successfully.' })
 
   } catch (error) {
+    logger.error({ message: 'Password reset error', error: err.message, url: req.originalUrl })
     res.status(500).json({ message: 'Server error' })
   }
 })
