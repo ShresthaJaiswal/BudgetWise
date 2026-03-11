@@ -55,7 +55,7 @@ export const budgetwiseApi = createApi({
             query: (id) => ({ url: `/transactions/${id}`, method: 'DELETE' }),
             invalidatesTags: ['Transaction'],
         }),
-        
+
         // lookup tables
         getTypes: builder.query({
             query: () => '/types',
@@ -74,20 +74,25 @@ export const budgetwiseApi = createApi({
         resetPassword: builder.mutation({
             query: (body) => ({ url: '/auth/reset-password', method: 'POST', body }),
         }),
+
+        getStats: builder.query({
+            query: () => '/stats',
+        }),
     }),
 });
 
 // Auto-generated hooks for each endpoint
 export const {
-  useRegisterMutation,
-  useLoginMutation,
-  useGetTransactionQuery,
-  useAddTransactionMutation,
-  useEditTransactionMutation,
-  useDeleteTransactionMutation,
-  useGetTypesQuery,
-  useGetCategoriesQuery,
-  useForgotPasswordMutation,
-  useVerifyOtpMutation,
-  useResetPasswordMutation,
+    useRegisterMutation,
+    useLoginMutation,
+    useGetTransactionQuery,
+    useAddTransactionMutation,
+    useEditTransactionMutation,
+    useDeleteTransactionMutation,
+    useGetTypesQuery,
+    useGetCategoriesQuery,
+    useForgotPasswordMutation,
+    useVerifyOtpMutation,
+    useResetPasswordMutation,
+    useGetStatsQuery
 } = budgetwiseApi

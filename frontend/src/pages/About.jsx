@@ -1,118 +1,146 @@
-const concepts = [
-  {
-    icon: '🧠',
-    hook: 'useState',
-    where: 'TransactionForm, Login, Dashboard',
-    desc: 'Manages local component state: form fields, edit mode, loading, error messages.',
-  },
-  {
-    icon: '⚡',
-    hook: 'useEffect',
-    where: 'ThemeContext, AuthContext, TransactionContext, Login',
-    desc: 'Syncs dark mode class, rehydrates auth from localStorage, persists transactions, fetches quote via axios on mount.',
-  },
-  {
-    icon: '🌐',
-    hook: 'useContext',
-    where: 'Navbar, Dashboard, Login, ProtectedRoute',
-    desc: 'ThemeContext for dark/light toggle, AuthContext for user session, TransactionContext for global transaction state.',
-  },
-  {
-    icon: '⚙️',
-    hook: 'useReducer → Redux slice',
-    where: 'store/transactionSlice.js',
-    desc: 'Filter, search, categoryFilter managed via Redux createSlice. CRUD replaced by RTK Query mutations.',
-  },
-  {
-    icon: '🚀',
-    hook: 'useMemo',
-    where: 'useBudget hook, Dashboard, Summary page',
-    desc: 'Pure computation hook — useMemo for totals, balance, filtered list, category breakdown. Receives transactions from RTK Query as a parameter.',
-  },
-  {
-    icon: '🎯',
-    hook: 'useRef',
-    where: 'TransactionForm, Login',
-    desc: 'Auto-focuses the description input when form mounts or edit mode activates. No re-render needed.',
-  },
-  {
-    icon: '🔗',
-    hook: 'Two-way Binding',
-    where: 'TransactionForm, Login',
-    desc: 'All inputs use value={state} + onChange={setState} for controlled, predictable form handling.',
-  },
-  {
-    icon: '🪆',
-    hook: 'Prop Drilling',
-    where: 'Dashboard → TransactionList → TransactionCard → TransactionBadge',
-    desc: 'Transactions and handlers are passed 3 levels deep intentionally, showcasing when Context vs props is appropriate.',
-  },
-  {
-    icon: '💾',
-    hook: 'localStorage',
-    where: 'ThemeContext, AuthContext, TransactionContext',
-    desc: 'Theme, user, and all transactions persist across sessions via localStorage, synced with useEffect.',
-  },
-  {
-    icon: '🗺️',
-    hook: 'React Router',
-    where: 'App.jsx, Navbar',
-    desc: 'Routes: /login, /dashboard, /summary, /about. Protected routes redirect unauthenticated users to /login.',
-  },
-  {
-    icon: '📡',
-    hook: 'axios',
-    where: 'Login page',
-    desc: 'Fetches a motivational quote from quotable.io on login page mount. Includes error handling with a fallback.',
-  },
+import { useGetStatsQuery } from '../store/api'
+
+const features = [
+  // built
+  { name: 'JWT Authentication', active: true, desc: 'Secure login and registration' },
+  { name: 'Password Reset via OTP', active: true, desc: 'Email OTP via Amazon SES' },
+  { name: 'Income & Expense Tracking', active: true, desc: 'Add, edit, soft delete transactions' },
+  { name: 'Smart Filters', active: true, desc: 'Filter by type, category, date, custom range' },
+  { name: 'CSV Export', active: true, desc: 'Export filtered transactions' },
+  { name: 'Dark Mode', active: true, desc: 'Persistent theme preference' },
+  { name: 'Financial Summary', active: true, desc: 'Monthly chart and category breakdown' },
+  { name: 'CloudWatch Logging', active: true, desc: 'Structured error logging via AWS' },
+  { name: 'Multi-currency Support', active: true, desc: 'INR, USD, EUR, GBP' },
+  // upcoming
+  { name: 'Budget Goals', active: false, desc: 'Set monthly spending limits per category' },
+  { name: 'Recurring Transactions', active: false, desc: 'Auto-log repeating income/expenses' },
+  { name: 'PDF Reports', active: false, desc: 'Download monthly financial reports' },
+  { name: 'Mobile App', active: false, desc: 'React Native companion app' },
+]
+
+const techStack = [
+  { layer: 'Frontend', items: ['React 18', 'Redux Toolkit', 'RTK Query', 'Tailwind CSS', 'Vite'] },
+  { layer: 'Backend', items: ['Node.js', 'Express', 'Prisma ORM', 'PostgreSQL'] },
+  { layer: 'Auth & Security', items: ['JWT', 'bcryptjs', 'OTP via Amazon SES'] },
+  { layer: 'Infra & Logging', items: ['AWS CloudWatch', 'Winston', 'AWS SDK v3'] },
 ]
 
 export default function About() {
+  const { data: stats, isLoading: statsLoading } = useGetStatsQuery()
+
+  const activeFeatures = features.filter(f => f.active)
+  const upcomingFeatures = features.filter(f => !f.active)
+
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-      <div className="mb-8 text-center">
-        <h1 className="font-display font-bold text-3xl text-slate-800 dark:text-slate-100 mb-2">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+
+      <div className="mb-8">
+        <h1 className="font-display font-bold text-2xl text-slate-800 dark:text-slate-100">
           About BudgetWise
         </h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm max-w-lg mx-auto">
-          A React showcase project demonstrating core hooks, patterns, and architecture
-          through a real-world budget tracking application.
+        <p className="text-slate-400 text-sm mt-1">
+          A full-stack personal finance tracker built with React, Node.js, and PostgreSQL.
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2 justify-center mb-10">
-        {['React 18', 'Tailwind CSS', 'axios', 'React Router v6', 'Vite'].map(t => (
-          <span
-            key={t}
-            className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-xs font-medium"
-          >
-            {t}
-          </span>
-        ))}
+      {/* ── DB Stats ─────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        {statsLoading ? (
+          Array(3).fill(0).map((_, i) => (
+            <div key={i} className="card p-4 text-center animate-pulse">
+              <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded mb-2" />
+              <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-2/3 mx-auto" />
+            </div>
+          ))
+        ) : (
+          <>
+            <div className="card p-4 text-center">
+              <p className="font-display font-bold text-3xl text-emerald-500">{stats?.transactionCount ?? '—'}</p>
+              <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider">Transactions</p>
+            </div>
+            <div className="card p-4 text-center">
+              <p className="font-display font-bold text-3xl text-emerald-500">{stats?.userCount ?? '—'}</p>
+              <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider">Users</p>
+            </div>
+            <div className="card p-4 text-center">
+              <p className="font-display font-bold text-xl text-emerald-500 truncate">{stats?.topCategory ?? '—'}</p>
+              <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider">Top Category</p>
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {concepts.map((c) => (
-          <div key={c.hook} className="card p-4 hover:shadow-md transition-shadow">
-            <div className="flex items-start gap-3">
-              <span className="text-2xl flex-shrink-0">{c.icon}</span>
-              <div>
-                <h3 className="font-mono font-semibold text-sm text-emerald-600 dark:text-emerald-400">
-                  {c.hook}
-                </h3>
-                <p className="text-xs text-slate-400 mb-1">{c.where}</p>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  {c.desc}
-                </p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+        {/* ── Built Features ──────────────────────────────────────────────── */}
+        <div className="card p-5">
+          <h2 className="font-display font-semibold text-slate-800 dark:text-slate-100 mb-4">
+            ✅ Features Built
+            <span className="ml-2 text-xs text-slate-400 font-normal">
+              {activeFeatures.length} features
+            </span>
+          </h2>
+          <div className="space-y-3">
+            {activeFeatures.map(f => (
+              <div key={f.name} className="flex items-start gap-2">
+                <span className="text-emerald-500 mt-0.5 text-sm">✓</span>
+                <div>
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{f.name}</p>
+                  <p className="text-xs text-slate-400">{f.desc}</p>
+                </div>
               </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div className="flex flex-col gap-6">
+
+          {/*Coming Soon */}
+          <div className="card p-5">
+            <h2 className="font-display font-semibold text-slate-800 dark:text-slate-100 mb-4">
+              🚧 Coming Soon
+              <span className="ml-2 text-xs text-slate-400 font-normal">
+                {upcomingFeatures.length} planned
+              </span>
+            </h2>
+            <div className="space-y-3">
+              {upcomingFeatures.map(f => (
+                <div key={f.name} className="flex items-start gap-2 opacity-60">
+                  <span className="text-slate-400 mt-0.5 text-sm">○</span>
+                  <div>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{f.name}</p>
+                    <p className="text-xs text-slate-400">{f.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+          {/* Tech Stack */}
+          <div className="card p-5">
+            <h2 className="font-display font-semibold text-slate-800 dark:text-slate-100 mt-6 mb-4">
+              🛠 Tech Stack
+            </h2>
+            <div className="space-y-3">
+              {techStack.map(t => (
+                <div key={t.layer}>
+                  <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">{t.layer}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {t.items.map(item => (
+                      <span
+                        key={item}
+                        className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
+        </div>
       </div>
-
-      <p className="text-center text-xs text-slate-400 mt-8">
-        Built with React + Tailwind CSS · All data stored locally in your browser
-      </p>
     </div>
   )
 }

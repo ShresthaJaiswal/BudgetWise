@@ -5,7 +5,7 @@ import TransactionList from '../components/TransactionList'
 import SummaryCards from '../components/SummaryCards'
 import { useGetTransactionQuery, useAddTransactionMutation, useEditTransactionMutation, useDeleteTransactionMutation, useGetTypesQuery, useGetCategoriesQuery, } from '../store/api'
 import { useDispatch, useSelector } from 'react-redux'
-import { setFilter, setSearch, setCategoryFilter, setDateFilter, setSortOrder } from '../store/slices/transactionSlice'
+import { setFilter, setSearch, setCategoryFilter, setDateFilter, setSortOrder, setCustomStartDate, setCustomEndDate } from '../store/slices/transactionSlice'
 
 
 // Prop drilling ROOT — computed values from useBudget passed down from here
@@ -14,14 +14,14 @@ export default function Dashboard() {
   const user = useSelector(state => state.auth.user)
 
   const dispatch = useDispatch()
-  
+
   // from Redux slice (local UI state)
-  const { filter, search, categoryFilter, dateFilter, sortOrder } = useSelector(state => state.transactions)
+  const { filter, search, categoryFilter, dateFilter, sortOrder, customStartDate, customEndDate } = useSelector(state => state.transactions)
 
   // Server state — from backend via RTK Query
   const { data: types = [] } = useGetTypesQuery()
   const { data: categories = [] } = useGetCategoriesQuery()
-  const{ data: transactions = [], isLoading } = useGetTransactionQuery(undefined, {
+  const { data: transactions = [], isLoading } = useGetTransactionQuery(undefined, {
     skip: !user  // ← don't fetch if logged out
   })
   const [addTransaction] = useAddTransactionMutation()
@@ -35,7 +35,7 @@ export default function Dashboard() {
     search,
     categoryFilter,
     dateFilter,
-    sortOrder
+    sortOrder, customStartDate, customEndDate
   )
 
   // Local UI state: which transaction is being edited
@@ -81,6 +81,32 @@ export default function Dashboard() {
     )
   }
 
+  const exportToCSV = () => {
+    if (filteredTransactions.length === 0) return
+
+    const headers = ['Date', 'Description', 'Type', 'Category', 'Amount']
+
+    const rows = filteredTransactions.map(t => [
+      new Date(t.createdAt).toLocaleDateString('en-IN'),
+      t.description,
+      t.type.name,
+      t.category.name,
+      t.amount
+    ])
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.join(','))
+      .join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `budgetwise_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
       <div className="mb-6">
@@ -121,6 +147,12 @@ export default function Dashboard() {
                 <span className="text-xs text-slate-400 font-mono">
                   {filteredTransactions.length} result{filteredTransactions.length !== 1 ? 's' : ''}
                 </span>
+                <button
+                  onClick={exportToCSV}
+                  disabled={filteredTransactions.length === 0}
+                  className="text-xs px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+                  ↓ Export CSV
+                </button>
               </div>
 
               <input
@@ -136,11 +168,10 @@ export default function Dashboard() {
                   <button
                     key={f}
                     onClick={() => dispatch(setFilter(f))}
-                    className={`text-xs px-3 py-1 rounded-full capitalize font-medium transition-all ${
-                      filter === f
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
-                    }`}
+                    className={`text-xs px-3 py-1 rounded-full capitalize font-medium transition-all ${filter === f
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                      }`}
                   >
                     {f}
                   </button>
@@ -164,7 +195,37 @@ export default function Dashboard() {
                   <option value="week">Last 7 Days</option>
                   <option value="month">This Month</option>
                   <option value="year">This Year</option>
+                  <option value="custom">Custom Date</option>
                 </select>
+
+                {/* Show date pickers only when custom is selected */}
+                {dateFilter === 'custom' && (
+                  <div className="flex gap-2 mt-2 w-full">
+                    <input
+                      type="date"
+                      className="text-xs px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-none outline-none flex-1"
+                      value={customStartDate}
+                      onChange={e => {
+                        if (customEndDate && e.target.value > customEndDate) {
+                          return setError('Start date cannot be after end date.')
+                        }
+                        dispatch(setCustomStartDate(e.target.value))
+                      }}
+                    />
+                    <span className="text-xs text-slate-400 self-center">to</span>
+                    <input
+                      type="date"
+                      className="text-xs px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-none outline-none flex-1"
+                      value={customEndDate}
+                      onChange={e => {
+                        if (customStartDate && e.target.value < customStartDate) {
+                          return setError('End date cannot be before start date.')
+                        }
+                        dispatch(setCustomStartDate(e.target.value))
+                      }}
+                    />
+                  </div>
+                )}
 
                 <select
                   className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-none outline-none"

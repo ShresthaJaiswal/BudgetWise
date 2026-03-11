@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 
-export function useBudget(transactions = [], filter = 'all', search = '', categoryFilter = 'all', dateFilter = 'all', sortOrder = 'newest') {
+export function useBudget(transactions = [], filter = 'all', search = '', categoryFilter = 'all', dateFilter = 'all', sortOrder = 'newest', customStartDate = '', customEndDate = '') {
 
   // Only recalculates when `transactions` changes & not on every render
   const totalIncome = useMemo(
@@ -53,8 +53,20 @@ export function useBudget(transactions = [], filter = 'all', search = '', catego
             txDate.getFullYear() === now.getFullYear()
           )
         }
+        if (dateFilter === '6months') {
+          const sixMonthsAgo = new Date()
+          sixMonthsAgo.setMonth(now.getMonth() - 6)
+          return txDate >= sixMonthsAgo
+        }
         if (dateFilter === 'year') {
           return txDate.getFullYear() === now.getFullYear()
+        }
+        if (dateFilter === 'custom') {
+          if (!customStartDate || !customEndDate) return true  // no range set yet, show all
+          const start = new Date(customStartDate)
+          const end = new Date(customEndDate)
+          end.setHours(23, 59, 59, 999)  // include the entire end day
+          return txDate >= start && txDate <= end
         }
         return true
       })
@@ -65,7 +77,7 @@ export function useBudget(transactions = [], filter = 'all', search = '', catego
         const dateB = new Date(b.createdAt)
         return sortOrder === 'newest' ? dateB - dateA : dateA - dateB
       })
-  }, [transactions, filter, search, categoryFilter, dateFilter, sortOrder])
+  }, [transactions, filter, search, categoryFilter, dateFilter, sortOrder, customStartDate, customEndDate])
 
   // Category breakdown for summary page
   const categoryBreakdown = useMemo(() => {
@@ -80,19 +92,19 @@ export function useBudget(transactions = [], filter = 'all', search = '', catego
       .sort((a, b) => b.amount - a.amount)       // {travel} 5000 - {food} 2000 → positive → Travel first
   }, [transactions])
 
-  // for bar chart — last 6 months
+  // for bar chart on summary page
   const monthlyData = useMemo(() => {
     const map = {}
-    transactions.forEach(t => {
+    filteredTransactions.forEach(t => {
       const date = new Date(t.createdAt)
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
       if (!map[key]) map[key] = { month: key, income: 0, expense: 0 }
       if (t.type.name === 'income') map[key].income += t.amount
       else map[key].expense += t.amount
     })
-    return Object.values(map).sort((a, b) => a.month.localeCompare(b.month)).slice(-6)
-  }, [transactions])
-  
+    return Object.values(map).sort((a, b) => a.month.localeCompare(b.month))
+  }, [filteredTransactions])
+
   return {
     totalIncome,
     totalExpenses,

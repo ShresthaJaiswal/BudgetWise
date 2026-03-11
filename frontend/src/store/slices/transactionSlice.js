@@ -4,7 +4,7 @@
 // search: ''
 // categoryFilter: 'all'
 
-import {createSlice} from '@reduxjs/toolkit'
+import { createSlice } from '@reduxjs/toolkit'
 
 const transactionSlice = createSlice({
     name: 'transaction',
@@ -19,17 +19,21 @@ const transactionSlice = createSlice({
         categoryFilter: 'all',
         dateFilter: 'all',
         sortOrder: 'newest',
+        customStartDate: '',
+        customEndDate: '',
     },
     // A reducer is just: A function that takes the current state + an action and returns a new state.
     reducers: {
         setFilter: (state, action) => { state.filter = action.payload },
         setSearch: (state, action) => { state.search = action.payload },
-        setCategory: (state, action) => { state.categoryFilter = action.payload },
+        setCategoryFilter: (state, action) => { state.categoryFilter = action.payload },
         setDateFilter: (state, action) => { state.dateFilter = action.payload },
         setSortOrder: (state, action) => { state.sortOrder = action.payload },
+        setCustomStartDate: (state, action) => { state.customStartDate = action.payload },
+        setCustomEndDate: (state, action) => { state.customEndDate = action.payload },
         //if updating multiple things or sending an object like in authSlice, use: action.payload.someField
     },
 })
 
-export const { setFilter, setSearch, setCategoryFilter, setDateFilter, setSortOrder } = transactionSlice.actions
+export const { setFilter, setSearch, setCategoryFilter, setDateFilter, setSortOrder, setCustomStartDate, setCustomEndDate } = transactionSlice.actions
 export default transactionSlice.reducer

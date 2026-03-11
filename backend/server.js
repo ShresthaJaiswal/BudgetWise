@@ -4,6 +4,10 @@ import 'dotenv/config'
 import lookupRoutes from './routes/lookup.js'
 import passwordResetRoutes from './routes/passwordReset.js'
 import { errorHandler } from './middleware/errorHandler.js'
+import authRoutes from './routes/auth.js'
+import transactionRoutes from './routes/transactions.js'
+import quoteRoutes from './routes/quote.js'
+import statsRoutes from './routes/stats.js'
 
 const app = express()
 // parse incoming JSON request bodies
@@ -11,18 +15,15 @@ app.use(express.json())
 app.use(cors())
 
 // Routes
-import authRoutes from './routes/auth.js'
-app.use('/api/auth', authRoutes)
-import transactionRoutes from './routes/transactions.js'
-app.use('/api/transactions', transactionRoutes)
 app.get('/api/health', (req, res)=> {
     res.json({ message: 'Server is running' })
 })
+app.use('/api/auth', authRoutes)
+app.use('/api/transactions', transactionRoutes)
 app.use('/api', lookupRoutes)
 app.use('/api/auth', passwordResetRoutes)
-
-import quoteRoutes from './routes/quote.js'
 app.use('/api', quoteRoutes)
+app.use('/api/stats', statsRoutes)
 
 // Allow frontend (5173) to talk to backend (5000)
 app.use(cors({
