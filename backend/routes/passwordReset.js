@@ -35,7 +35,7 @@ router.post('/forgot-password', async (req, res) => {
     console.log('Created new OTP:', otp)
 
     await sendOTPEmail(email, otp)
-    logger.info({ message: 'OTP sent', email })
+    logger.info({ message: 'OTP sent', email, url: req.originalUrl })
 
     res.json({ message: 'If this email exists, an OTP has been sent.' })
 
@@ -68,7 +68,7 @@ router.post('/verify-otp', async (req, res) => {
       return res.status(400).json({ message: 'OTP has expired. Please request a new one.' })
     }
 
-    logger.info({ message: 'OTP verified', email })
+    logger.info({ message: 'OTP verified', email, url: req.originalUrl })
     res.json({ message: 'OTP verified successfully.' })
 
   } catch (error) {
@@ -95,7 +95,7 @@ router.post('/reset-password', async (req, res) => {
     // The reason we re-verify on the backend in /reset-password is security — without it, someone could skip the /verify-otp call entirely and hit /reset-password directly via Postman with a guessed OTP. Re-checking on the final step ensures the OTP was genuinely verified before the password changes.
     // So from the user's perspective — they type the OTP once. From the backend's perspective — it checks it twice.
     if (!record || record.otp !== otp || new Date() > record.expiresAt) {
-      logger.warn({ message: 'Invalid OTP attempt', email })
+      logger.warn({ message: 'Invalid OTP attempt', email, url: req.originalUrl })
       return res.status(400).json({ message: 'Invalid or expired OTP. Please try again.', redirect: 'forgot' })
     }
 
@@ -115,7 +115,7 @@ router.post('/reset-password', async (req, res) => {
     await sendResetEmail(email)
     console.log('Email for password reset sent')
 
-    logger.info({ message: 'Password reset successful', email })
+    logger.info({ message: 'Password reset successful', email, url: req.originalUrl })
     res.json({ message: 'Password reset successfully.' })
 
   } catch (error) {

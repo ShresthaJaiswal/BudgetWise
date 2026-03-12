@@ -6,6 +6,9 @@ import SummaryCards from '../components/SummaryCards'
 import { useGetTransactionQuery, useAddTransactionMutation, useEditTransactionMutation, useDeleteTransactionMutation, useGetTypesQuery, useGetCategoriesQuery, } from '../store/api'
 import { useDispatch, useSelector } from 'react-redux'
 import { setFilter, setSearch, setCategoryFilter, setDateFilter, setSortOrder, setCustomStartDate, setCustomEndDate } from '../store/slices/transactionSlice'
+import Toast from '../components/Toast'
+import ConfirmDialog from '../components/ConfirmDialog'
+import { useToast } from '../hooks/useToast'
 
 
 // Prop drilling ROOT — computed values from useBudget passed down from here
@@ -41,6 +44,12 @@ export default function Dashboard() {
   // Local UI state: which transaction is being edited
   const [editData, setEditData] = useState(null)
 
+  const { toasts, addToast, removeToast } = useToast()
+  // confirm dialog state
+  const [confirmState, setConfirmState] = useState({ isOpen: false, id: null })
+  // duplicate warning state
+  const [duplicateWarning, setDuplicateWarning] = useState({ isOpen: false, pendingData: null })
+
   const handleCancelEdit = () => setEditData(null)
 
   const handleSubmit = async (data) => {
@@ -48,21 +57,45 @@ export default function Dashboard() {
       if (editData) {
         await editTransaction({ id: editData.id, ...data }).unwrap()
         setEditData(null)
+        addToast('Transaction updated successfully', 'success')
       } else {
         await addTransaction(data).unwrap() // no need to manually update state — invalidatesTags does it automatically
+        addToast('Transaction added successfully', 'success')
       }
     } catch (err) {
-      console.error('Transaction error:', err)
+      if (err.status === 409) {
+        // duplicate detected — ask user if they want to proceed
+        setDuplicateWarning({ isOpen: true, pendingData: data })
+      } else {
+        addToast(err.data?.message || 'Transaction error', 'error')
+      }
     }
   }
 
-  const handleDelete = async (id) => {
-    if (confirm('Delete this transaction?')) {
-      try {
-        await deleteTransaction(id).unwrap()
-      } catch (err) {
-        console.error('Delete error:', err)
-      }
+  // force add despite duplicate
+  const handleForceAdd = async () => {
+    try {
+      await addTransaction({ ...duplicateWarning.pendingData, force: true }).unwrap()
+      addToast('Transaction added', 'success')
+      setDuplicateWarning({ isOpen: false, pendingData: null })
+    } catch (err) {
+      addToast(err.data?.message || 'Something went wrong', 'error')
+    }
+  }
+
+  // custom confirm dialog
+  const handleDelete = (id) => {
+    setConfirmState({ isOpen: true, id })
+  }
+
+  const handleConfirmDelete = async () => {
+    try {
+      await deleteTransaction(confirmState.id).unwrap()
+      addToast('Transaction deleted', 'success')
+    } catch (err) {
+      addToast('Failed to delete transaction', 'error')
+    } finally {
+      setConfirmState({ isOpen: false, id: null })
     }
   }
 
@@ -250,6 +283,25 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Confirm delete dialog */}
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        message="Are you sure you want to delete this transaction?"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmState({ isOpen: false, id: null })}
+      />
+
+      {/* Duplicate warning dialog */}
+      <ConfirmDialog
+        isOpen={duplicateWarning.isOpen}
+        message="A similar transaction was logged in the last 24 hours. Add it anyway?"
+        onConfirm={handleForceAdd}
+        onCancel={() => setDuplicateWarning({ isOpen: false, pendingData: null })}
+      />
+
+      {/* Toast container */}
+      <Toast toasts={toasts} removeToast={removeToast} />
     </div>
   )
 }

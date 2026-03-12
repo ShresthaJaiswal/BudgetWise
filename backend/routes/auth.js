@@ -56,7 +56,7 @@ router.post('/register', async (req, res) => {
         //     {userId: user.id}, process.env.JWT_SECRET, {expiresIn: '7d'}
         // );
 
-        logger.info({ message: 'User registered', email, userId: user.id })
+        logger.info({ message: 'User registered', email, userId: user.id, url: req.originalUrl })
         res.status(201).json({
             // token,
             user: { id: user.id, name: user.name },
@@ -87,7 +87,7 @@ router.post('/login', async (req, res) => {
         });
 
         if (!existingUser) {
-            logger.warn({ message: 'Failed login attempt', email })
+            logger.warn({ message: 'Failed login attempt', email, url: req.originalUrl })
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
@@ -101,7 +101,7 @@ router.post('/login', async (req, res) => {
             { userId: existingUser.id }, process.env.JWT_SECRET, { expiresIn: '7d' }
         );
 
-        logger.info({ message: 'User logged in', email, userId: existingUser.id })
+        logger.info({ message: 'User logged in', email, userId: existingUser.id, url: req.originalUrl })
         res.status(200).json({
             token,
             user: { id: existingUser.id, name: existingUser.name, email: existingUser.email, currency: existingUser.currency },
