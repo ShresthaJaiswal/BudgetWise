@@ -8,11 +8,16 @@ import authRoutes from './routes/auth.js'
 import transactionRoutes from './routes/transactions.js'
 import quoteRoutes from './routes/quote.js'
 import statsRoutes from './routes/stats.js'
+import cookieParser from 'cookie-parser'
 
 const app = express()
 // parse incoming JSON request bodies
 app.use(express.json())
-app.use(cors())
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}))
+app.use(cookieParser())
 
 // Routes
 app.get('/api/health', (req, res)=> {

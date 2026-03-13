@@ -1,22 +1,51 @@
 // manages SERVER state (fetching/mutating from backend)
 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { setToken, clearUser } from './slices/authSlice'
+
+// Every request automatically attaches the token from localStorage
+const baseQuery = fetchBaseQuery({
+    baseUrl: 'http://localhost:5000/api',
+    credentials: 'include',  // ← add this — sends cookies cross-origin
+    prepareHeaders: (headers, { getState }) => {
+        const token = getState().auth.token;
+        if (token) {
+            headers.set('authorization', `Bearer ${token}`)
+        }
+        return headers;
+    }
+})
+
+// wrapper that handles 401 by refreshing token automatically
+const baseQueryWithReauth = async (args, api, extraOptions) => {
+  let result = await baseQuery(args, api, extraOptions)
+
+  if (result.error?.status === 401) {
+    // try to get a new access token
+    const refreshResult = await baseQuery(
+      { url: '/auth/refresh', method: 'POST' },
+      api,
+      extraOptions
+    )
+
+    if (refreshResult.data) {
+      // store new access token
+      api.dispatch(setToken(refreshResult.data.accessToken))
+      // retry original request with new token
+      result = await baseQuery(args, api, extraOptions)
+    } else {
+      // refresh failed — log user out
+      api.dispatch(clearUser())
+    }
+  }
+
+  return result
+}
 
 // baseApi creation
 export const budgetwiseApi = createApi({
     reducerPath: 'budgetwiseApi',
-
-    // Every request automatically attaches the token from localStorage
-    baseQuery: fetchBaseQuery({
-        baseUrl: 'http://localhost:5000/api',
-        prepareHeaders: (headers, { getState }) => {
-            const token = getState().auth.token;
-            if (token) {
-                headers.set('authorization', `Bearer ${token}`)
-            }
-            return headers;
-        }
-    }),
+    baseQuery: baseQueryWithReauth,  // ← use wrapper instead of plain baseQuery
     tagTypes: ['User', 'Transaction'], // for cache invalidation
     /* This tells Redux: “Anything labeled Post is now stale.”
     Boom 💥 → automatic refetch.

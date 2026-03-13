@@ -18,6 +18,10 @@ const authSlice = createSlice({
       localStorage.setItem('bw_token', action.payload.token);
       localStorage.setItem('bw_user', JSON.stringify(action.payload.user)); // save user to localStorage so auth state persists on refresh
     },
+    setToken: (state, action) => {
+      state.token = action.payload
+      localStorage.setItem('bw_token', action.payload)
+    },
     clearUser: (state) => {
       state.token = null;
       state.user = null;
@@ -27,5 +31,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setUser, clearUser } = authSlice.actions
+export const { setUser, clearUser, setToken } = authSlice.actions
 export default authSlice.reducer

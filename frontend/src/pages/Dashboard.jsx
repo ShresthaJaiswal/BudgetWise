@@ -9,7 +9,7 @@ import { setFilter, setSearch, setCategoryFilter, setDateFilter, setSortOrder, s
 import Toast from '../components/Toast'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useToast } from '../hooks/useToast'
-
+import { useEffect, useRef } from 'react'
 
 // Prop drilling ROOT — computed values from useBudget passed down from here
 
@@ -49,8 +49,22 @@ export default function Dashboard() {
   const [confirmState, setConfirmState] = useState({ isOpen: false, id: null })
   // duplicate warning state
   const [duplicateWarning, setDuplicateWarning] = useState({ isOpen: false, pendingData: null })
+  const hasShownWelcome = useRef(false)
+  useEffect(() => {
+    if (user && !hasShownWelcome.current) {
+      addToast(`Welcome back, ${user.name}!`, 'success')
+      hasShownWelcome.current = true
+    }
+    if (user?.transactions?.length === 0) {
+      addToast('Start recording your daily expenses or income now!', 'info')
+    } // error happens because user.transactions is undefined when the component first renders.
+      // React renders once before your data finishes loading, so at that moment:
+      // user = { ... }      // exists
+      // user.transactions = undefined
 
-  const handleCancelEdit = () => setEditData(null)
+      // Then this line crashes: user.transactions.length
+      // because you're trying to read .length of undefined.
+  }, [user])
 
   const handleSubmit = async (data) => {
     try {
@@ -83,11 +97,12 @@ export default function Dashboard() {
     }
   }
 
+  const handleCancelEdit = () => setEditData(null)
+
   // custom confirm dialog
   const handleDelete = (id) => {
     setConfirmState({ isOpen: true, id })
   }
-
   const handleConfirmDelete = async () => {
     try {
       await deleteTransaction(confirmState.id).unwrap()

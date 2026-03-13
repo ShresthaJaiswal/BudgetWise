@@ -6,6 +6,20 @@ import jwt from 'jsonwebtoken';
 import { z } from 'zod'; // for validating incoming data
 import logger from '../utils/logger.js'
 
+const generateTokens = (userId) => {
+    const accessToken = jwt.sign(
+        { userId },
+        process.env.JWT_SECRET,
+        { expiresIn: '15m' }
+    )
+    const refreshToken = jwt.sign(
+        { userId },
+        process.env.JWT_REFRESH_SECRET,
+        { expiresIn: '7d' }
+    )
+    return { accessToken, refreshToken }
+}
+
 const registerSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
     email: z.string().email().regex(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, 'Invalid email'),
@@ -97,13 +111,22 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        const token = jwt.sign(
-            { userId: existingUser.id }, process.env.JWT_SECRET, { expiresIn: '7d' }
-        );
+        // const token = jwt.sign(
+        //     { userId: existingUser.id }, process.env.JWT_SECRET, { expiresIn: '7d' }
+        // );
+
+        const { accessToken, refreshToken } = generateTokens(existingUser.id)
+        // refresh token goes in httpOnly cookie — JS can't read it
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',  // https only in prod
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000  // 7 days in ms
+        })
 
         logger.info({ message: 'User logged in', email, userId: existingUser.id, url: req.originalUrl })
         res.status(200).json({
-            token,
+            accessToken,
             user: { id: existingUser.id, name: existingUser.name, email: existingUser.email, currency: existingUser.currency },
             message: 'User logged in successfully'
         });
@@ -113,5 +136,34 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ message: 'Server Error', error: err.message });
     }
 })
+
+// called automatically when access token expires
+router.post('/refresh', async (req, res) => {
+    try {
+        const token = req.cookies.refreshToken
+        if (!token) {
+            return res.status(401).json({ message: 'No refresh token provided' })
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET)
+        const { accessToken } = generateTokens(decoded.userId)
+
+        res.status(200).json({ accessToken });
+
+    } catch (err) {
+        logger.error({ message: 'Auth error', error: err.message, url: req.originalUrl })
+        res.status(500).json({ message: 'Server Error', error: err.message });
+    }
+})
+
+// logout route to clear refresh token cookie
+router.post('/logout', (req, res) => {
+    res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+    });
+    res.status(200).json({ message: 'Logged out successfully' });
+});
 
 export default router;

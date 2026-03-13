@@ -5,6 +5,8 @@ import { useTheme } from '../context/ThemeContext'
 import { useLoginMutation, useRegisterMutation, useForgotPasswordMutation, useVerifyOtpMutation, useResetPasswordMutation } from '../store/api'
 import { useDispatch, useSelector } from 'react-redux'
 import { setUser } from '../store/slices/authSlice'
+import Toast from '../components/Toast'
+import { useToast } from '../hooks/useToast'
 
 export default function Login() {
   const user = useSelector(state => state.auth.user)
@@ -44,6 +46,9 @@ export default function Login() {
   const [quote, setQuote] = useState(null)
   const [error, setError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+
+  // toasts and pop-ups
+  const { toasts, addToast, removeToast } = useToast()
 
   // useRef: auto-focus email input on mount
   const emailRef = useRef(null)
@@ -90,14 +95,14 @@ export default function Login() {
     if (step === 'register' && !name.trim()) return setError('Please enter your name.')
     if (!password.trim()) return setError('Please enter a password.')
 
-    setError('')  // ← clear any previous error before making the request
+    setError('')  // clear any previous error before making the request
 
     try {
       if (step === 'register') {
         // Register flow
         const res = await registerApi({ name: name.trim(), email, password, currency }).unwrap()
         dispatch(setUser({
-          token: res.token,        // ← add token here
+          token: res.accessToken, // change res.token to res.accessToken
           user: {
             name: res.user.name,
             email: res.user.email,
@@ -105,11 +110,12 @@ export default function Login() {
             currency: res.user.currency
           }
         }))
+        addToast('Account created successfully! Welcome 🎉', 'success')
       } else {
         // Login flow
         const res = await loginApi({ email, password }).unwrap()
         dispatch(setUser({
-          token: res.token,        // ← add token here
+          token: res.accessToken,
           user: {
             name: res.user.name,
             email: res.user.email,
@@ -121,7 +127,7 @@ export default function Login() {
       navigate('/dashboard')
 
     } catch (err) {
-      setError(err.data?.message || 'Something went wrong. Please try again.')
+      addToast(err.data?.message || 'Something went wrong.', 'error')
     }
   }
 
@@ -152,6 +158,7 @@ export default function Login() {
       setOtp('')
       if (err.data?.redirect === 'forgot') {
         setNoAccount(true)  // show register/login options instead of resend
+        addToast('No account found with this email. Please register or use another email.', 'warn')
       }
     }
   }
@@ -177,8 +184,8 @@ export default function Login() {
 
       setTimeout(() => {
         goToStep('login')
-        setSuccessMsg('Password reset successfully. Please sign in.')
-      }, 3000)
+        addToast('Password Reset Successfully! Please sign in.', 'success')
+      }, 5000)
 
     } catch (err) {
       setError(err?.data?.message || 'Something went wrong.')
@@ -541,6 +548,8 @@ export default function Login() {
           Your data is securely stored in the cloud
         </p>
       </div>
+
+      <Toast toasts={toasts} removeToast={removeToast} />
     </div>
   )
 }
