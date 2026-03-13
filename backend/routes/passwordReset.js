@@ -4,11 +4,12 @@ import prisma from '../prisma/client.js'
 import { sendOTPEmail, sendResetEmail } from '../utils/mailer.js'
 import crypto from 'crypto'
 import logger from '../utils/logger.js'
+import { forgotPasswordLimiter } from '../middleware/rateLimiter.js'
 
 const router = express.Router()
 
-// STEP 1: Send OTP
-router.post('/forgot-password', async (req, res) => {
+// Apply rate limiting to the forgot password endpoint
+router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
   try {
     const { email } = req.body
     console.log('Forgot password request for:', email)

@@ -127,7 +127,11 @@ export default function Login() {
       navigate('/dashboard')
 
     } catch (err) {
-      addToast(err.data?.message || 'Something went wrong.', 'error')
+      if (err.status === 429) {
+        addToast('Too many attempts. Please try again later.', 'warn')
+      } else {
+        addToast(err.data?.message || 'Something went wrong.', 'error')
+      }
     }
   }
 
@@ -141,7 +145,11 @@ export default function Login() {
       await forgotPassword({ email: resetEmail }).unwrap()
       goToStep('verify-otp')
     } catch (err) {
-      setError(err.data?.message || 'Something went wrong.')
+      if (err.status === 429) {
+        addToast('Too many attempts. Please try again later.', 'warn')
+      } else {
+        addToast(err.data?.message || 'Something went wrong.', 'error')
+      }
     }
   }
 

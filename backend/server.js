@@ -9,6 +9,7 @@ import transactionRoutes from './routes/transactions.js'
 import quoteRoutes from './routes/quote.js'
 import statsRoutes from './routes/stats.js'
 import cookieParser from 'cookie-parser'
+import { apiLimiter, authLimiter } from './middleware/rateLimiter.js'
 
 const app = express()
 // parse incoming JSON request bodies
@@ -29,6 +30,8 @@ app.use('/api', lookupRoutes)
 app.use('/api/auth', passwordResetRoutes)
 app.use('/api', quoteRoutes)
 app.use('/api/stats', statsRoutes)
+app.use('/api', apiLimiter)
+app.use('/api/auth', authLimiter)
 
 // Allow frontend (5173) to talk to backend (5000)
 app.use(cors({
