@@ -9,12 +9,17 @@ const authSlice = createSlice({
   initialState: {
     token: localStorage.getItem('bw_token') || null,
     user: savedUser ? JSON.parse(savedUser) : null, // since localStorage always stores data in String format
+    showWelcome: false // for welcome message on first login
   },
   reducers: {
+    setShowWelcome: (state, action) => { 
+      state.showWelcome = action.payload 
+    },
     // Called after successful login or register
     setUser: (state, action) => {
       state.token = action.payload.token;
       state.user = action.payload.user;
+      state.showWelcome = true;
       localStorage.setItem('bw_token', action.payload.token);
       localStorage.setItem('bw_user', JSON.stringify(action.payload.user)); // save user to localStorage so auth state persists on refresh
     },

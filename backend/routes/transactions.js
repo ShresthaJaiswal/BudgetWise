@@ -170,6 +170,8 @@ router.delete('/:id', protect, async (req, res) => {
             where: {
                 id: Number(req.params.id),
                 user_id: req.user.userId
+                // updatedAt: new Date()
+                // In the where clause, updatedAt is not a unique identifier, it shouldn't be in where. It belongs in data if you want to track it, but since it's @updatedAt Prisma updates it automatically anyway
             },
             data: {
                 status: 0  // soft delete

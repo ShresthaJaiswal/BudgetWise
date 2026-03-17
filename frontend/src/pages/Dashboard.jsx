@@ -2,14 +2,15 @@ import { useState } from 'react'
 import { useBudget } from '../hooks/useBudget'
 import TransactionForm from '../components/TransactionForm'
 import TransactionList from '../components/TransactionList'
-import SummaryCards from '../components/SummaryCards'
-import { useGetTransactionQuery, useAddTransactionMutation, useEditTransactionMutation, useDeleteTransactionMutation, useGetTypesQuery, useGetCategoriesQuery, } from '../store/api'
+import { useGetTransactionQuery, useAddTransactionMutation, useEditTransactionMutation, useDeleteTransactionMutation, useGetTypesQuery, useGetCategoriesQuery, useGetGroupsQuery } from '../store/api'
 import { useDispatch, useSelector } from 'react-redux'
 import { setFilter, setSearch, setCategoryFilter, setDateFilter, setSortOrder, setCustomStartDate, setCustomEndDate } from '../store/slices/transactionSlice'
+import { setShowWelcome } from '../store/slices/authSlice'
 import Toast from '../components/Toast'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useToast } from '../hooks/useToast'
 import { useEffect, useRef } from 'react'
+import GroupModal from '../components/GroupModal'
 
 // Prop drilling ROOT — computed values from useBudget passed down from here
 
@@ -30,9 +31,10 @@ export default function Dashboard() {
   const [addTransaction] = useAddTransactionMutation()
   const [editTransaction] = useEditTransactionMutation()
   const [deleteTransaction] = useDeleteTransactionMutation()
+  const { data: groups = [] } = useGetGroupsQuery()
 
   // Computed values from useBudget (pure useMemo hook)
-  const { totalIncome, totalExpenses, balance, filteredTransactions } = useBudget(
+  const { filteredTransactions } = useBudget(
     transactions,
     filter,
     search,
@@ -43,28 +45,28 @@ export default function Dashboard() {
 
   // Local UI state: which transaction is being edited
   const [editData, setEditData] = useState(null)
-
+  const [selectedGroup, setSelectedGroup] = useState(null)
   const { toasts, addToast, removeToast } = useToast()
   // confirm dialog state
   const [confirmState, setConfirmState] = useState({ isOpen: false, id: null })
-  // duplicate warning state
   const [duplicateWarning, setDuplicateWarning] = useState({ isOpen: false, pendingData: null })
-  const hasShownWelcome = useRef(false)
+
+  const showWelcome = useSelector(state => state.auth.showWelcome)
   useEffect(() => {
-    if (user && !hasShownWelcome.current) {
-      addToast(`Welcome back, ${user.name}!`, 'success')
-      hasShownWelcome.current = true
+    if (showWelcome) {
+      addToast(`Welcome ${user.name}!`, 'success')
+      dispatch(setShowWelcome(false))  // ← clear it so it doesn't show again
     }
     if (user?.transactions?.length === 0) {
       addToast('Start recording your daily expenses or income now!', 'info')
     } // error happens because user.transactions is undefined when the component first renders.
-      // React renders once before your data finishes loading, so at that moment:
-      // user = { ... }      // exists
-      // user.transactions = undefined
+    // React renders once before your data finishes loading, so at that moment:
+    // user = { ... }      // exists
+    // user.transactions = undefined
 
-      // Then this line crashes: user.transactions.length
-      // because you're trying to read .length of undefined.
-  }, [user])
+    // Then this line crashes: user.transactions.length
+    // because you're trying to read .length of undefined.
+  }, [showWelcome, user])
 
   const handleSubmit = async (data) => {
     try {
@@ -164,14 +166,44 @@ export default function Dashboard() {
         <p className="text-slate-400 text-sm mt-0.5">Here's your financial overview.</p>
       </div>
 
-      <div className="mb-6">
+      {/* <div className="mb-6">
         <SummaryCards
           // drilled from useMemo
           totalIncome={totalIncome}
           totalExpenses={totalExpenses}
           balance={balance}
         />
+      </div> */}
+
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        {groups.map(g => (
+          <div
+            key={g.id}
+            onClick={() => setSelectedGroup(g)}
+            className="card p-4 cursor-pointer hover:shadow-md transition-all">
+            <p className="font-display font-semibold text-slate-800 dark:text-slate-100 mb-1">{g.name}</p>
+            <p className="text-xs text-slate-400 mb-2">{g._count.transactions} transaction{g._count.transactions !== 1 ? 's' : ''}</p>
+            <p className={`text-lg font-bold ${g.net >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+              {g.net >= 0 ? '+' : ''}₹{Math.abs(g.net).toLocaleString('en-IN')}
+            </p>
+          </div>
+        ))}
+
+        <div
+          onClick={() => setSelectedGroup({ isNew: true })}
+          className="card p-4 cursor-pointer border-dashed hover:shadow-md transition-all flex items-center justify-center">
+          <p className="text-slate-400 text-sm">+ New group</p>
+        </div>
       </div>
+
+      {selectedGroup && (
+        <GroupModal
+          group={selectedGroup}
+          onClose={() => setSelectedGroup(null)}
+          allTransactions={transactions}
+          addToast={addToast}
+        />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Add/Edit Form */}
@@ -269,7 +301,7 @@ export default function Dashboard() {
                         if (customStartDate && e.target.value < customStartDate) {
                           return setError('End date cannot be before start date.')
                         }
-                        dispatch(setCustomStartDate(e.target.value))
+                        dispatch(setCustomEndDate(e.target.value))
                       }}
                     />
                   </div>

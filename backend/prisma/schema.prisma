@@ -16,6 +16,7 @@ model user {
   createdAt        DateTime      @default(now())  @map("created_at")
   updatedAt        DateTime      @updatedAt  @map("updated_at")
   transactions     transactions[]
+  groups           group[]
 }
 
 model transactions {
@@ -36,6 +37,7 @@ model transactions {
   user            user                  @relation(fields: [user_id], references: [id])  // just a relation for foreign key
   type            transaction_type      @relation(fields: [type_id], references: [id])
   category        transaction_category  @relation(fields: [category_id], references: [id])
+  groups          group_transaction[]
 
   @@index([type_id])
   @@index([category_id])  // But right now your type/category filtering happens in useBudget on the frontend via useMemo — not in the database query. So those indexes are essentially unused at the moment.
@@ -51,17 +53,44 @@ model transaction_type {
 }
 
 model transaction_category {
-  id              Int           @id @default(autoincrement())
-  name            String        @unique  // 'Food & Dining', 'Transport' etc
-  created_at      DateTime      @default(now())
-  status          Int           @default(1)  // When Prisma sees a field with no default and you don't pass it in the data object, it throws Argument 'status' is missing — it can't guess what value to use.
+  id              Int          @id @default(autoincrement())
+  name            String       @unique  // 'Food & Dining', 'Transport' etc
+  created_at      DateTime     @default(now())
+  status          Int          @default(1)  // When Prisma sees a field with no default and you don't pass it in the data object, it throws Argument 'status' is missing — it can't guess what value to use.
   transactions    transactions[]
 }
 
 model password_reset {
-  id              Int      @id @default(autoincrement())
+  id              Int        @id @default(autoincrement())
   email           String
   otp             String
-  createdAt       DateTime @default(now()) @map("created_at")
-  expiresAt       DateTime @map("expires_at")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  expiresAt       DateTime   @map("expires_at")
+}
+
+model group {
+  id              Int        @id @default(autoincrement())
+  name            String
+  user_id         Int
+  createdAt       DateTime   @default(now()) @map("created_at")
+  createdBy       Int        @map("created_by")
+  updatedAt       DateTime   @updatedAt  @map("updated_at")
+  updatedBy       Int        @map("updated_by")
+  status          Int        @default(1)
+
+  user            user       @relation(fields: [user_id], references: [id])
+  transactions    group_transaction[]
+}
+
+model group_transaction {
+  id              Int          @id @default(autoincrement())
+  group_id        Int
+  transaction_id  Int
+  createdAt       DateTime     @default(now()) @map("created_at")
+  createdBy       Int          @map("created_by")
+
+  group           group        @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  transaction    transactions  @relation(fields: [transaction_id], references: [id], onDelete: Cascade)
+
+  @@unique([group_id, transaction_id])
 }

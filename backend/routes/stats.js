@@ -1,3 +1,5 @@
+// route for fetching application statistics
+
 import express from 'express'
 import prisma from '../prisma/client.js'
 import { protect } from '../middleware/authMiddleware.js'

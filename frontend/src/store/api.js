@@ -18,35 +18,35 @@ const baseQuery = fetchBaseQuery({
 
 // wrapper that handles 401 by refreshing token automatically
 const baseQueryWithReauth = async (args, api, extraOptions) => {
-  let result = await baseQuery(args, api, extraOptions)
+    let result = await baseQuery(args, api, extraOptions)
 
-  if (result.error?.status === 401) {
-    // try to get a new access token
-    const refreshResult = await baseQuery(
-      { url: '/auth/refresh', method: 'POST' },
-      api,
-      extraOptions
-    )
+    if (result.error?.status === 401) {
+        // try to get a new access token
+        const refreshResult = await baseQuery(
+            { url: '/auth/refresh', method: 'POST' },
+            api,
+            extraOptions
+        )
 
-    if (refreshResult.data) {
-      // store new access token
-      api.dispatch(setToken(refreshResult.data.accessToken))
-      // retry original request with new token
-      result = await baseQuery(args, api, extraOptions)
-    } else {
-      // refresh failed — log user out
-      api.dispatch(clearUser())
+        if (refreshResult.data) {
+            // store new access token
+            api.dispatch(setToken(refreshResult.data.accessToken))
+            // retry original request with new token
+            result = await baseQuery(args, api, extraOptions)
+        } else {
+            // refresh failed — log user out
+            api.dispatch(clearUser())
+        }
     }
-  }
 
-  return result
+    return result
 }
 
 // baseApi creation
 export const budgetwiseApi = createApi({
     reducerPath: 'budgetwiseApi',
     baseQuery: baseQueryWithReauth,  // ← use wrapper instead of plain baseQuery
-    tagTypes: ['User', 'Transaction'], // for cache invalidation
+    tagTypes: ['Transaction', 'Groups'], // for cache invalidation
     /* This tells Redux: “Anything labeled Post is now stale.”
     Boom 💥 → automatic refetch.
     No manual refresh. No dispatch. Nothing. */
@@ -104,9 +104,43 @@ export const budgetwiseApi = createApi({
             query: (body) => ({ url: '/auth/reset-password', method: 'POST', body }),
         }),
 
+        // stats for About page
         getStats: builder.query({
             query: () => '/stats',
         }),
+
+        // custom groups
+        getGroups: builder.query({
+            query: () => '/groups',
+            providesTags: ['Groups'],
+        }),
+        createGroup: builder.mutation({
+            query: (body) => ({ url: '/groups', method: 'POST', body }),
+            invalidatesTags: ['Groups'],
+        }),
+        renameGroup: builder.mutation({
+            query: ({ id, ...body }) => ({ url: `/groups/${id}`, method: 'PATCH', body }),
+            invalidatesTags: ['Groups'],
+        }),
+        addTransactionToGroup: builder.mutation({
+            query: ({ groupId, transaction_id }) => ({
+                url: `/groups/${groupId}/transactions`,
+                method: 'POST',
+                body: { transaction_id }
+            }),
+            invalidatesTags: ['Groups']
+        }),
+        removeTransactionFromGroup: builder.mutation({
+            query: ({ groupId, txnId }) => ({
+                url: `/groups/${groupId}/transactions/${txnId}`,
+                method: 'DELETE'
+            }),
+            invalidatesTags: ['Groups']
+        }),
+        deleteGroup: builder.mutation({
+            query: (id) => ({ url: `/groups/${id}`, method: 'DELETE' }),
+            invalidatesTags: ['Groups'],
+        })
     }),
 });
 
@@ -123,5 +157,11 @@ export const {
     useForgotPasswordMutation,
     useVerifyOtpMutation,
     useResetPasswordMutation,
-    useGetStatsQuery
+    useGetStatsQuery,
+    useGetGroupsQuery,
+    useCreateGroupMutation,
+    useRenameGroupMutation,
+    useAddTransactionToGroupMutation,
+    useRemoveTransactionFromGroupMutation,
+    useDeleteGroupMutation
 } = budgetwiseApi
