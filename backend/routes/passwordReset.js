@@ -2,6 +2,7 @@ import express from 'express'
 import bcrypt from 'bcryptjs'
 import prisma from '../prisma/client.js'
 import { sendOTPEmail, sendResetEmail } from '../utils/mailer.js'
+import { sendSMS } from '../utils/smsSender.js'
 import crypto from 'crypto'
 import logger from '../utils/logger.js'
 import { forgotPasswordLimiter } from '../middleware/rateLimiter.js'
@@ -36,6 +37,9 @@ router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
     console.log('Created new OTP:', otp)
 
     await sendOTPEmail(email, otp)
+    if (user.phone) {
+      await sendSMS(user.phone, `Your OTP for password reset is: ${otp}`)
+    }
     logger.info({ message: 'OTP sent', email, url: req.originalUrl })
 
     res.json({ message: 'If this email exists, an OTP has been sent.' })

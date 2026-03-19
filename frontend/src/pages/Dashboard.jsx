@@ -11,6 +11,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import { useToast } from '../hooks/useToast'
 import { useEffect, useRef } from 'react'
 import GroupModal from '../components/GroupModal'
+import { exportToCSV, exportToPDF } from '../utils/export'
 
 // Prop drilling ROOT — computed values from useBudget passed down from here
 
@@ -131,32 +132,6 @@ export default function Dashboard() {
     )
   }
 
-  const exportToCSV = () => {
-    if (filteredTransactions.length === 0) return
-
-    const headers = ['Date', 'Description', 'Type', 'Category', 'Amount']
-
-    const rows = filteredTransactions.map(t => [
-      new Date(t.createdAt).toLocaleDateString('en-IN'),
-      t.description,
-      t.type.name,
-      t.category.name,
-      t.amount
-    ])
-
-    const csvContent = [headers, ...rows]
-      .map(row => row.join(','))
-      .join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `budgetwise_${new Date().toISOString().slice(0, 10)}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
       <div className="mb-6">
@@ -227,12 +202,17 @@ export default function Dashboard() {
                 <span className="text-xs text-slate-400 font-mono">
                   {filteredTransactions.length} result{filteredTransactions.length !== 1 ? 's' : ''}
                 </span>
-                <button
-                  onClick={exportToCSV}
-                  disabled={filteredTransactions.length === 0}
-                  className="text-xs px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
-                  ↓ Export CSV
-                </button>
+                <select
+                  className="text-xs px-2 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 border-none outline-none"
+                  value=""
+                  onChange={e => {
+                    if (e.target.value === 'csv') exportToCSV(filteredTransactions)
+                    if (e.target.value === 'pdf') exportToPDF(filteredTransactions, user)
+                  }}>
+                  <option value="" disabled>↓ Export</option>
+                  <option value="csv">Export CSV</option>
+                  <option value="pdf">Export PDF</option>
+                </select>
               </div>
 
               <input

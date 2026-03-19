@@ -32,6 +32,7 @@ export default function Login() {
   // login + register fields
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [currency, setCurrency] = useState('INR')
 
@@ -100,12 +101,13 @@ export default function Login() {
     try {
       if (step === 'register') {
         // Register flow
-        const res = await registerApi({ name: name.trim(), email, password, currency }).unwrap()
+        const res = await registerApi({ name: name.trim(), email, phone: phone || undefined, password, currency }).unwrap()
         dispatch(setUser({
           token: res.accessToken, // change res.token to res.accessToken
           user: {
             name: res.user.name,
             email: res.user.email,
+            phone: res.user.phone,
             id: res.user.id,
             currency: res.user.currency
           }
@@ -330,6 +332,20 @@ export default function Login() {
           {/* ── REGISTER FORM ───────────────────────────────────────────────── */}
           {step === 'register' && (
             <form onSubmit={handleSubmit}>
+
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                  Your Name
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="e.g. Arjun Sharma"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                />
+              </div>
+
               <div className="mb-4">
                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                   Your Email
@@ -345,14 +361,14 @@ export default function Login() {
 
               <div className="mb-4">
                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
-                  Your Name
+                  Your Phone (optional)
                 </label>
                 <input
-                  type="text"
+                  type="tel"
                   className="input-field"
-                  placeholder="e.g. Arjun Sharma"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
+                  placeholder="e.g. +919876543210"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
                 />
               </div>
 

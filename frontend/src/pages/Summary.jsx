@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
 import { useBudget } from '../hooks/useBudget'
-import { useGetTransactionQuery } from '../store/api'
+import { useGetTransactionQuery, useGetGroupsQuery } from '../store/api'
 import { useSelector, useDispatch } from 'react-redux'
 import { setDateFilter, setCustomEndDate, setCustomStartDate } from '../store/slices/transactionSlice'
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 function BarChart({ data }) {
   if (!data || data.length === 0) {
@@ -78,6 +79,7 @@ function CategoryBreakdown({ data }) {
 
 export default function Summary() {
   const { data: transactions = [] } = useGetTransactionQuery()
+  const { data: groups = [] } = useGetGroupsQuery()
 
   const dispatch = useDispatch()
   const { filter, search, categoryFilter, dateFilter, sortOrder, customStartDate, customEndDate } = useSelector(state => state.transactions)
@@ -93,6 +95,16 @@ export default function Summary() {
 
   const fmt = (n) =>
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n)
+
+  const groupChartData = groups.map(g => ({
+    name: g.name,
+    transactions: g._count.transactions,
+    net: Math.abs(g.net)
+  })).filter(g => g.transactions > 0)  // exclude empty groups
+
+  // colors for each slice
+  // the colors array is just a palette, not tied to transaction counts. The i % COLORS.length part cycles through it dynamically
+  const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
@@ -199,7 +211,72 @@ export default function Summary() {
           <p className="text-xs text-slate-400 mb-4">Expenses only</p>
           <CategoryBreakdown data={categoryBreakdown} />
         </div>
+
       </div>
+
+      {/* Group Distribution */}
+        {groupChartData.length > 0 && (
+          <div className="card p-5 mt-6">
+            <h2 className="font-display font-semibold text-slate-800 dark:text-slate-100 mb-1">
+              Group overview
+            </h2>
+            <p className="text-xs text-slate-400 mb-6">Transaction count per group</p>
+
+            <div className="flex flex-col md:flex-row items-center gap-6">
+
+              {/* donut chart */}
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                    data={groupChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}    // ← makes it a donut
+                    outerRadius={110}
+                    paddingAngle={3}
+                    dataKey="transactions"
+                    nameKey="name"
+                  >
+                    {groupChartData.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => [`${value} transaction${value !== 1 ? 's' : ''}`, '']}
+                    contentStyle={{
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      color: '#f8fafc',
+                      padding: '3px 9px'
+                    }}
+                  />
+                  <Legend
+                    formatter={(value) => (
+                      <span className="text-xs text-slate-600 dark:text-slate-300">{value}</span>
+                    )}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+
+              {/* side table */}
+              <div className="w-full md:w-64 space-y-2 shrink-0">
+                {groupChartData
+                  .sort((a, b) => b.transactions - a.transactions)
+                  .map((g, i) => (
+                    <div key={g.name} className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                        <span className="text-sm text-slate-700 dark:text-slate-300 truncate max-w-[120px]">{g.name}</span>
+                      </div>
+                      <span className="text-xs text-slate-400 ml-2">{g.transactions} txn{g.transactions !== 1 ? 's' : ''}</span>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   )
 }
