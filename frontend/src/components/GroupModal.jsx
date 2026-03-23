@@ -7,10 +7,11 @@ import ConfirmDialog from './ConfirmDialog'
 import { useGetGroupsQuery } from '../store/api'
 
 export default function GroupModal({ group, onClose, allTransactions, addToast }) {
-    const { data: groups = [] } = useGetGroupsQuery()
-    const liveGroup = groups.find(g => g.id === group.id) || group
-
-    const [name, setName] = useState(group.isNew ? '' : group.name)
+    // add state for tracking newly created group id
+    const [createdGroupId, setCreatedGroupId] = useState(null)
+    // treat as edit mode once created
+    const isNew = group.isNew && !createdGroupId
+    const [name, setName] = useState(isNew ? '' : group.name)
     const [pickerOpen, setPickerOpen] = useState(false)
     const [error, setError] = useState('')
     const [closeConfirm, setCloseConfirm] = useState(false) // for unsaved changes
@@ -19,11 +20,26 @@ export default function GroupModal({ group, onClose, allTransactions, addToast }
     const [stagedAdd, setStagedAdd] = useState([])       // transaction objects to add
     const [stagedRemove, setStagedRemove] = useState([]) // transaction ids to remove
 
+    const { data: groups = [] } = useGetGroupsQuery()
     const [createGroup] = useCreateGroupMutation()
     const [renameGroup] = useRenameGroupMutation()
     const [deleteGroup] = useDeleteGroupMutation()
     const [addTransactionToGroup] = useAddTransactionToGroupMutation()
     const [removeTransactionFromGroup] = useRemoveTransactionFromGroupMutation()
+
+    const liveGroup = createdGroupId
+        ? groups.find(g => g.id === createdGroupId) || group // newly created
+        : groups.find(g => g.id === group.id) || group // existing
+
+    if (createdGroupId && !liveGroup) {
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="card p-8 flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+            </div>
+        )
+    }
 
     // compute display list from live + staged
     const linkedTransactions = [
@@ -34,7 +50,7 @@ export default function GroupModal({ group, onClose, allTransactions, addToast }
 
     const linkedIds = linkedTransactions.map(t => t.id)
 
-    const originalName = group.isNew ? '' : group.name
+    const originalName = isNew ? '' : group.name
     const hasChanges = name !== originalName || stagedAdd.length > 0 || stagedRemove.length > 0 // drives the close/cross button behavior
 
     // stage add (no DB call yet)
@@ -62,10 +78,12 @@ export default function GroupModal({ group, onClose, allTransactions, addToast }
         if (!name.trim()) return setError('Group name cannot be empty')
 
         try {
-            if (group.isNew) {
-                await createGroup({ name }).unwrap()
+            if (isNew) {
+                const newGroup = await createGroup({ name }).unwrap()
                 addToast('Group created', 'success')
-                onClose()
+                // onClose()
+                setCreatedGroupId(newGroup.id) // // stay open, switch to edit mode
+                setPickerOpen(true)
                 return
             }
 
@@ -120,7 +138,7 @@ export default function GroupModal({ group, onClose, allTransactions, addToast }
                 {/* header — cross uses handleClose */}
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="font-display font-semibold text-slate-800 dark:text-slate-100">
-                        {group.isNew ? 'New group' : 'Edit group'}
+                        {isNew ? 'New group' : 'Edit group'}
                     </h2>
                     <button onClick={handleClose} className="text-slate-400 hover:text-slate-600 text-xl">×</button>
                 </div>
@@ -133,7 +151,7 @@ export default function GroupModal({ group, onClose, allTransactions, addToast }
                 />
                 {error && <p className="text-xs text-rose-500 mb-3">{error}</p>}
 
-                {!group.isNew && (
+                {!isNew && (
                     <div className="flex-1 overflow-y-auto my-4 space-y-2">
                         {linkedTransactions.length === 0
                             ? <p className="text-sm text-slate-400 text-center py-4">No transactions yet</p>
@@ -155,7 +173,7 @@ export default function GroupModal({ group, onClose, allTransactions, addToast }
                     </div>
                 )}
 
-                {!group.isNew && (
+                {!isNew && (
                     pickerOpen
                         ? <TransactionPicker
                             allTransactions={allTransactions}
@@ -169,7 +187,7 @@ export default function GroupModal({ group, onClose, allTransactions, addToast }
                 )}
 
                 <div className="flex gap-3 mt-auto pt-4 border-t border-slate-100 dark:border-slate-700">
-                    {!group.isNew && (
+                    {!isNew && (
                         <button onClick={handleDelete} className="text-sm px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all">
                             Delete group
                         </button>
@@ -179,7 +197,7 @@ export default function GroupModal({ group, onClose, allTransactions, addToast }
                         Cancel
                     </button>
                     <button onClick={handleSave} className="text-sm px-4 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 transition-all">
-                        {group.isNew ? 'Create' : 'Save'}
+                        {isNew ? 'Create' : 'Save'}
                     </button>
                 </div>
             </div>

@@ -6,6 +6,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Summary from './pages/Summary'
 import About from './pages/About'
+import Groups from './pages/Groups'
 
 // ProtectedRoute is basically a wrapper. children = <Dashboard />
 function ProtectedRoute({ children }) {
@@ -21,7 +22,11 @@ function AppLayout() {
     <div className="min-h-screen">
       {user && <Navbar />}
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" 
+          element={
+            <Login />
+          } 
+        />
         <Route
           path="/dashboard"
           element={
@@ -29,6 +34,13 @@ function AppLayout() {
               <Dashboard />
             </ProtectedRoute>
           }
+        />
+        <Route path="/groups" 
+          element={
+            <ProtectedRoute>
+              <Groups />
+            </ProtectedRoute>
+            } 
         />
         <Route
           path="/summary"

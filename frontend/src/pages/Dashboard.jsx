@@ -12,11 +12,13 @@ import { useToast } from '../hooks/useToast'
 import { useEffect, useRef } from 'react'
 import GroupModal from '../components/GroupModal'
 import { exportToCSV, exportToPDF } from '../utils/export'
+import { useNavigate } from 'react-router-dom'
 
 // Prop drilling ROOT — computed values from useBudget passed down from here
 
 export default function Dashboard() {
   const user = useSelector(state => state.auth.user)
+  const navigate = useNavigate()
 
   const dispatch = useDispatch()
 
@@ -48,6 +50,8 @@ export default function Dashboard() {
   const [editData, setEditData] = useState(null)
   const [selectedGroup, setSelectedGroup] = useState(null)
   const { toasts, addToast, removeToast } = useToast()
+  // show only 3 most recent groups (backend already orders by createdAt desc)
+  const recentGroups = groups.slice(0, 3)
   // confirm dialog state
   const [confirmState, setConfirmState] = useState({ isOpen: false, id: null })
   const [duplicateWarning, setDuplicateWarning] = useState({ isOpen: false, pendingData: null })
@@ -141,34 +145,42 @@ export default function Dashboard() {
         <p className="text-slate-400 text-sm mt-0.5">Here's your financial overview.</p>
       </div>
 
-      {/* <div className="mb-6">
-        <SummaryCards
-          // drilled from useMemo
-          totalIncome={totalIncome}
-          totalExpenses={totalExpenses}
-          balance={balance}
-        />
-      </div> */}
+      <div className="flex gap-3 overflow-x-auto pb-3 mb-6"
+        style={{ scrollbarWidth: 'thin' }}>
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        {groups.map(g => (
+        {/* New group — always first */}
+        <div
+          onClick={() => setSelectedGroup({ isNew: true })}
+          className="flex-shrink-0 w-48 h-30 rounded-2xl border border-dashed border-slate-600 hover:border-emerald-500 cursor-pointer transition-all flex flex-col items-center justify-center gap-1">
+          <span className="text-emerald-500 text-2xl leading-none">+</span>
+          <p className="text-slate-400 text-xs">New group</p>
+        </div>
+
+        {/* Group cards */}
+        {recentGroups.map(g => (
           <div
             key={g.id}
             onClick={() => setSelectedGroup(g)}
-            className="card p-4 cursor-pointer hover:shadow-md transition-all">
-            <p className="font-display font-semibold text-slate-800 dark:text-slate-100 mb-1">{g.name}</p>
-            <p className="text-xs text-slate-400 mb-2">{g._count.transactions} transaction{g._count.transactions !== 1 ? 's' : ''}</p>
-            <p className={`text-lg font-bold ${g.net >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-              {g.net >= 0 ? '+' : ''}₹{Math.abs(g.net).toLocaleString('en-IN')}
+            className="card flex-shrink-0 w-48 h-30 cursor-pointer hover:shadow-md transition-all p-3 flex flex-col justify-between">
+            <p className="font-semibold text-sm text-slate-800 dark:text-slate-100 truncate">{g.name}</p>
+            <p className="text-xs text-slate-400">{g._count.transactions} txn{g._count.transactions !== 1 ? 's' : ''}</p>
+            <p className={`text-sm font-bold ${g.net >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+              {g.net >= 0 ? '+' : ''}Rs.{Math.abs(g.net).toLocaleString('en-IN')}
             </p>
           </div>
         ))}
 
-        <div
-          onClick={() => setSelectedGroup({ isNew: true })}
-          className="card p-4 cursor-pointer border-dashed hover:shadow-md transition-all flex items-center justify-center">
-          <p className="text-slate-400 text-sm">+ New group</p>
-        </div>
+        {/* View all tile */}
+        {groups.length > 3 && (
+          <div
+            onClick={() => navigate('/groups')}
+            className="flex-shrink-0 w-36 h-24 rounded-2xl border border-slate-700 hover:border-slate-500 cursor-pointer transition-all flex flex-col items-center justify-center gap-1">
+            <span className="text-slate-400 text-xl">→</span>
+            <p className="text-slate-400 text-xs">View all</p>
+            <p className="text-slate-500 text-xs">{groups.length} groups</p>
+          </div>
+        )}
+
       </div>
 
       {selectedGroup && (
@@ -298,7 +310,7 @@ export default function Dashboard() {
             </div>
 
             {/* Transaction List — prop drilling chain starts here */}
-            <div className="max-h-[460px] overflow-y-auto p-2">
+            <div className="max-h-[400px] overflow-y-auto p-2">
               <TransactionList
                 // drilled down (level 1)
                 transactions={filteredTransactions}
