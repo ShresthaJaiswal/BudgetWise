@@ -9,7 +9,7 @@ import Toast from '../components/Toast'
 import { useToast } from '../hooks/useToast'
 
 export default function Login() {
-  const user = useSelector(state => state.auth.user)
+  const { user, token } = useSelector(state => state.auth)
   // state.auth returns { user: {...}, token: '...' } — the whole slice. state.auth.user returns just { name, email, id, currency } which is what user?.name expects.
 
   const { isDark, toggleTheme } = useTheme()
@@ -57,8 +57,12 @@ export default function Login() {
 
   // redirect if already logged in
   useEffect(() => {
-    if (user) navigate('/dashboard')
-  }, [user, navigate])
+    if (user && token) navigate('/dashboard')
+  }, [user, token, navigate])
+  // [user, token, navigate] = technically correct
+  // [user, token] = works, but may trigger ESLint warning
+  // Including navigate won’t cause re-runs
+  // navigate from useNavigate is stable: const navigate = useNavigate() : Across renders: navigate === navigate  // always true
 
   useEffect(() => {
     nameRef.current?.focus()
@@ -217,7 +221,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-emerald-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-gradient-to-br from-emerald-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950">
 
       {/* Theme toggle */}
       <button
@@ -226,7 +230,7 @@ export default function Login() {
         {isDark ? '☀️' : '🌙'}
       </button>
 
-      <div className="w-full max-w-sm animate-fade-in">
+      <div className="w-full max-w-sm animate-fade-in my-auto">
 
         {/* Header */}
         <div className="text-center mb-8">
@@ -268,7 +272,7 @@ export default function Login() {
             </p>
           )}
 
-          {/* ── LOGIN FORM ──────────────────────────────────────────────────── */}
+          {/* LOGIN FORM */}
           {step === 'login' && (
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
@@ -329,7 +333,7 @@ export default function Login() {
             </form>
           )}
 
-          {/* ── REGISTER FORM ───────────────────────────────────────────────── */}
+          {/* REGISTER FORM */}
           {step === 'register' && (
             <form onSubmit={handleSubmit}>
 
@@ -421,7 +425,7 @@ export default function Login() {
             </form>
           )}
 
-          {/* ── FORGOT PASSWORD FORM ────────────────────────────────────────── */}
+          {/* FORGOT PASSWORD FORM */}
           {step === 'forgot' && (
             <form onSubmit={handleForgotPassword}>
               <p className="text-xs text-slate-400 mb-4">
@@ -460,7 +464,7 @@ export default function Login() {
             </form>
           )}
 
-          {/* ── VERIFY OTP FORM ─────────────────────────────────────────────── */}
+          {/* VERIFY OTP FORM */}
           {step === 'verify-otp' && (
             <form onSubmit={handleVerifyOtp}>
               <p className="text-xs text-slate-400 mb-4">
@@ -496,7 +500,7 @@ export default function Login() {
                   <p>
                     <button
                       type="button"
-                      onClick={() => { goToStep('register'); setEmail(resetEmail) }}  // prefill email
+                      onClick={() => { goToStep('register'); setEmail('resetEmail') }}  // prefill email
                       className="text-emerald-500 hover:text-emerald-600 font-medium">
                       Register with this email
                     </button>

@@ -32,8 +32,17 @@ const transactionSlice = createSlice({
         setCustomStartDate: (state, action) => { state.customStartDate = action.payload },
         setCustomEndDate: (state, action) => { state.customEndDate = action.payload },
         //if updating multiple things or sending an object like in authSlice, use: action.payload.someField
-    },
+        resetTransactionFilters: (state) => {
+            state.filter = 'all'
+            state.search = ''
+            state.categoryFilter = 'all'
+            state.dateFilter = 'all'
+            state.sortOrder = 'newest'
+            state.customStartDate = ''
+            state.customEndDate = ''
+        }
+    }
 })
 
-export const { setFilter, setSearch, setCategoryFilter, setDateFilter, setSortOrder, setCustomStartDate, setCustomEndDate } = transactionSlice.actions
+export const { setFilter, setSearch, setCategoryFilter, setDateFilter, setSortOrder, setCustomStartDate, setCustomEndDate, resetTransactionFilters } = transactionSlice.actions
 export default transactionSlice.reducer

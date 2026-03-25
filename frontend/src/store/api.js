@@ -36,6 +36,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
         } else {
             // refresh failed — log user out
             api.dispatch(clearUser())
+            api.dispatch({ type: 'budgetwiseApi/resetApiState' })
         }
     }
 
@@ -140,6 +141,9 @@ export const budgetwiseApi = createApi({
         deleteGroup: builder.mutation({
             query: (id) => ({ url: `/groups/${id}`, method: 'DELETE' }),
             invalidatesTags: ['Groups'],
+        }),
+        requestCsvExport: builder.mutation({
+            query: (body) => ({ url: '/export/csv', method: 'POST', body })
         })
     }),
 });
@@ -163,5 +167,6 @@ export const {
     useRenameGroupMutation,
     useAddTransactionToGroupMutation,
     useRemoveTransactionFromGroupMutation,
-    useDeleteGroupMutation
+    useDeleteGroupMutation,
+    useRequestCsvExportMutation
 } = budgetwiseApi

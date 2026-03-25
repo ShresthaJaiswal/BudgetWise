@@ -1,7 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import prisma from '../prisma/client.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod'; // for validating incoming data
 import logger from '../utils/logger.js'
@@ -22,14 +22,14 @@ const generateTokens = (userId) => {
 
 const registerSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
-    email: z.string().email().regex(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, 'Invalid email'),
+    email: z.email('Invalid email'),
     phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number').optional(),
     password: z.string().min(6, 'Password must be at least 6 characters'),
     currency: z.string().optional().default('INR')
 })
 
 const loginSchema = z.object({
-    email: z.string().email('Invalid email address'),
+    email: z.email('Invalid email address'), 
     password: z.string().min(1, 'Password is required'),
 })
 
@@ -41,12 +41,13 @@ router.post('/register', async (req, res) => {
         // Validate first — before touching the database
         const result = registerSchema.safeParse(req.body)
         if (!result.success) {
+            const issues = result.error.issues || result.error.errors || []
             return res.status(400).json({
-                message: result.error.errors[0].message
+                message: issues[0]?.message || 'Validation failed'
             })
         }
 
-        const { name, email, password, currency } = result.data
+        const { name, email, password, currency, phone } = result.data
 
         const existingUser = await prisma.user.findUnique({
             where: { email },
@@ -91,8 +92,9 @@ router.post('/login', async (req, res) => {
     try {
         const result = loginSchema.safeParse(req.body)
         if (!result.success) {
+            const issues = result.error.issues || result.error.errors || []
             return res.status(400).json({
-                message: result.error.errors[0].message
+                message: issues[0]?.message || 'Validation failed'
             })
         }
 

@@ -10,66 +10,41 @@ import Groups from './pages/Groups'
 
 // ProtectedRoute is basically a wrapper. children = <Dashboard />
 function ProtectedRoute({ children }) {
-  const user = useSelector(state => state.auth)
+  const { user, token } = useSelector(state => state.auth)
 
-  return user ? children : <Navigate to="/login" replace />
+  if (!user || !token) return <Navigate to="/login" replace />
+  return children
   // replace means don’t add the protected route to browser history. Without replace, user could press back and go to the protected page again.
 }
 
-function AppLayout() {
-  const user = useSelector(state => state.auth)
+// layout with navbar — only for authenticated pages
+function AuthLayout() {
   return (
     <div className="min-h-screen">
-      {user && <Navbar />}
-      <Routes>
-        <Route path="/login" 
-          element={
-            <Login />
-          } 
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/groups" 
-          element={
-            <ProtectedRoute>
-              <Groups />
-            </ProtectedRoute>
-            } 
-        />
-        <Route
-          path="/summary"
-          element={
-            <ProtectedRoute>
-              <Summary />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/about"
-          element={
-            <ProtectedRoute>
-              <About />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
+      <Navbar />
+      <Outlet />  {/* renders the child route */}
     </div>
   )
 }
 
-// Context Providers wrap everything
 export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <AppLayout />
+        <Routes>
+          {/* no navbar */}
+          <Route path="/login" element={<Login />} />
+
+          {/* authenticated routes — with navbar */}
+          <Route element={<AuthLayout />}>
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
+            <Route path="/summary" element={<ProtectedRoute><Summary /></ProtectedRoute>} />
+            <Route path="/about" element={<ProtectedRoute><About /></ProtectedRoute>} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
       </ThemeProvider>
     </BrowserRouter>
   )

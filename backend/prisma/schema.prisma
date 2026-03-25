@@ -11,7 +11,7 @@ model user {
   id               Int           @id @default(autoincrement())
   name             String
   email            String        @unique
-  phone            String?       // optional, ? means nullable
+  phone            String?       @unique // optional, ? means nullable
   password         String
   currency         String        @default("INR")
   createdAt        DateTime      @default(now())  @map("created_at")

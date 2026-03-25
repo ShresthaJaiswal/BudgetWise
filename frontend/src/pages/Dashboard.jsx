@@ -2,7 +2,16 @@ import { useState } from 'react'
 import { useBudget } from '../hooks/useBudget'
 import TransactionForm from '../components/TransactionForm'
 import TransactionList from '../components/TransactionList'
-import { useGetTransactionQuery, useAddTransactionMutation, useEditTransactionMutation, useDeleteTransactionMutation, useGetTypesQuery, useGetCategoriesQuery, useGetGroupsQuery } from '../store/api'
+import {
+  useGetTransactionQuery,
+  useAddTransactionMutation,
+  useEditTransactionMutation,
+  useDeleteTransactionMutation,
+  useGetTypesQuery,
+  useGetCategoriesQuery,
+  useGetGroupsQuery,
+  useRequestCsvExportMutation
+} from '../store/api'
 import { useDispatch, useSelector } from 'react-redux'
 import { setFilter, setSearch, setCategoryFilter, setDateFilter, setSortOrder, setCustomStartDate, setCustomEndDate } from '../store/slices/transactionSlice'
 import { setShowWelcome } from '../store/slices/authSlice'
@@ -35,6 +44,7 @@ export default function Dashboard() {
   const [editTransaction] = useEditTransactionMutation()
   const [deleteTransaction] = useDeleteTransactionMutation()
   const { data: groups = [] } = useGetGroupsQuery()
+  const [requestCsvExport] = useRequestCsvExportMutation()
 
   // Computed values from useBudget (pure useMemo hook)
   const { filteredTransactions } = useBudget(
@@ -145,13 +155,13 @@ export default function Dashboard() {
         <p className="text-slate-400 text-sm mt-0.5">Here's your financial overview.</p>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-3 mb-6"
+      <div className="flex gap-3 overflow-x-auto pb-3 mb-6 items-start"
         style={{ scrollbarWidth: 'thin' }}>
 
         {/* New group — always first */}
         <div
           onClick={() => setSelectedGroup({ isNew: true })}
-          className="flex-shrink-0 w-48 h-30 rounded-2xl border border-dashed border-slate-600 hover:border-emerald-500 cursor-pointer transition-all flex flex-col items-center justify-center gap-1">
+          className="flex-shrink-0 w-36 h-24 rounded-2xl border border-dashed border-slate-600 hover:border-emerald-500 cursor-pointer transition-all flex flex-col items-center justify-center gap-1">
           <span className="text-emerald-500 text-2xl leading-none">+</span>
           <p className="text-slate-400 text-xs">New group</p>
         </div>
@@ -218,7 +228,19 @@ export default function Dashboard() {
                   className="text-xs px-2 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 border-none outline-none"
                   value=""
                   onChange={e => {
-                    if (e.target.value === 'csv') exportToCSV(filteredTransactions)
+                    if (e.target.value === 'csv') {
+                      exportToCSV(filteredTransactions)
+                      requestCsvExport({ filters: { dateFilter, categoryFilter, filter } })
+                        .unwrap()
+                        .then(() => addToast('Export queued — check your email shortly', 'info'))
+                        .catch(() => addToast('Failed to queue export', 'error'))
+                    } 
+                    // you can't pass filteredTransactions to the backend.
+                    // filteredTransactions is frontend-only computed data living in the browser's memory. You can't send it to a backend queue because:
+                    // Frontend memory → can't be serialized into SQS reliably
+                    // Large arrays    → SQS has a 256KB message size limit
+                    // Wrong pattern   → queue jobs should contain instructions, not data
+                    // The worker fetches fresh data from the DB itself — that's the point. You send what to fetch, not the data itself
                     if (e.target.value === 'pdf') exportToPDF(filteredTransactions, user)
                   }}>
                   <option value="" disabled>↓ Export</option>

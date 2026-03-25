@@ -11,10 +11,13 @@ import statsRoutes from './routes/stats.js'
 import cookieParser from 'cookie-parser'
 import { apiLimiter, authLimiter } from './middleware/rateLimiter.js'
 import groupRoutes from './routes/groups.js'
+import exportRoutes from './routes/export.js'
+import { startExportWorker } from './workers/exportWorker.js'
 
 const app = express()
 // parse incoming JSON request bodies
 app.use(express.json())
+// Allow frontend (5173) to talk to backend (5000)
 app.use(cors({
     origin: 'http://localhost:5173',
     credentials: true
@@ -25,21 +28,20 @@ app.use(cookieParser())
 app.get('/api/health', (req, res)=> {
     res.json({ message: 'Server is running' })
 })
+// rate limiters before routes
+app.use('/api', apiLimiter)
+app.use('/api/auth', authLimiter)
 app.use('/api/auth', authRoutes)
 app.use('/api/transactions', transactionRoutes)
 app.use('/api', lookupRoutes)
 app.use('/api/auth', passwordResetRoutes)
 app.use('/api', quoteRoutes)
 app.use('/api/stats', statsRoutes)
-app.use('/api', apiLimiter)
-app.use('/api/auth', authLimiter)
 app.use('/api/groups', groupRoutes)
+app.use('/api/export', exportRoutes)
 
-// Allow frontend (5173) to talk to backend (5000)
-app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true
-}))
+
+startExportWorker()  // Start the export worker when the server starts
 
 // 404 handler
 app.use((req, res) => {

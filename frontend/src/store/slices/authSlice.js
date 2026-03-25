@@ -48,6 +48,7 @@ const authSlice = createSlice({
       state.user = null;
       localStorage.removeItem('bw_token');
       localStorage.removeItem('bw_user'); // on next load, authSlice initialState reads bw_user back and thinks you're still logged in — so ProtectedRoute never redirects to login. Removing bw_user on logout fixes this.
+      // cached API data from budgetwiseApi and transactionSlice still remains to be cleared on logout
     },
   },
 });

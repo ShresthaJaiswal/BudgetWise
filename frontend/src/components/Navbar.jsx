@@ -2,6 +2,8 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
 import { useDispatch, useSelector } from 'react-redux'
 import { clearUser } from '../store/slices/authSlice'
+import { budgetwiseApi } from '../store/api'
+import { resetTransactionFilters } from '../store/slices/transactionSlice'
 
 export default function Navbar() {
   const user = useSelector(state => state.auth.user)
@@ -14,6 +16,9 @@ export default function Navbar() {
 
   const handleLogout = () => {
     dispatch(clearUser())
+    // RTK Query cache persists between sessions. When a new user logs in, they see the previous user's data until the cache expires.
+    dispatch(budgetwiseApi.util.resetApiState()) // cached API data
+    dispatch(resetTransactionFilters()) // filters, search etc
     navigate('/login')
   }
 
