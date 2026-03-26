@@ -17,34 +17,60 @@ function ProtectedRoute({ children }) {
   // replace means don’t add the protected route to browser history. Without replace, user could press back and go to the protected page again.
 }
 
-// layout with navbar — only for authenticated pages
-function AuthLayout() {
+function AppLayout() {
+  const user = useSelector(state => state.auth)
   return (
     <div className="min-h-screen">
-      <Navbar />
-      <Outlet />  {/* renders the child route */}
+      {user && <Navbar />}
+      <Routes>
+        <Route path="/login" 
+          element={
+            <Login />
+          } 
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/groups"
+          element={
+            <ProtectedRoute>
+              <Groups />
+            </ProtectedRoute>
+            } 
+        />
+        <Route
+          path="/summary"
+          element={
+            <ProtectedRoute>
+              <Summary />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/about"
+          element={
+            <ProtectedRoute>
+              <About />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
     </div>
   )
 }
 
+// Context Providers wrap everything
 export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <Routes>
-          {/* no navbar */}
-          <Route path="/login" element={<Login />} />
-
-          {/* authenticated routes — with navbar */}
-          <Route element={<AuthLayout />}>
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
-            <Route path="/summary" element={<ProtectedRoute><Summary /></ProtectedRoute>} />
-            <Route path="/about" element={<ProtectedRoute><About /></ProtectedRoute>} />
-          </Route>
-
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
+        <AppLayout />
       </ThemeProvider>
     </BrowserRouter>
   )

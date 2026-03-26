@@ -155,7 +155,7 @@ export default function Dashboard() {
         <p className="text-slate-400 text-sm mt-0.5">Here's your financial overview.</p>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-3 mb-6 items-start"
+      <div className="flex gap-4 overflow-x-auto pb-3 mb-6 items-stretch"
         style={{ scrollbarWidth: 'thin' }}>
 
         {/* New group — always first */}

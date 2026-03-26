@@ -43,7 +43,7 @@ export default function About() {
         </p>
       </div>
 
-      {/* ── DB Stats ─────────────────────────────────────────────────────── */}
+      {/* DB Stats */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         {statsLoading ? (
           Array(3).fill(0).map((_, i) => (
@@ -72,10 +72,10 @@ export default function About() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 
-        {/* ── Built Features ──────────────────────────────────────────────── */}
+        {/* Built Features */}
         <div className="card p-5">
           <h2 className="font-display font-semibold text-slate-800 dark:text-slate-100 mb-4">
-            ✅ Features Built
+            Features Built
             <span className="ml-2 text-xs text-slate-400 font-normal">
               {activeFeatures.length} features
             </span>
@@ -99,7 +99,7 @@ export default function About() {
           {/*Coming Soon */}
           <div className="card p-5">
             <h2 className="font-display font-semibold text-slate-800 dark:text-slate-100 mb-4">
-              🚧 Coming Soon
+              Coming Soon
               <span className="ml-2 text-xs text-slate-400 font-normal">
                 {upcomingFeatures.length} planned
               </span>
@@ -120,7 +120,7 @@ export default function About() {
           {/* Tech Stack */}
           <div className="card p-5">
             <h2 className="font-display font-semibold text-slate-800 dark:text-slate-100 mt-6 mb-4">
-              🛠 Tech Stack
+              Tech Stack
             </h2>
             <div className="space-y-3">
               {techStack.map(t => (

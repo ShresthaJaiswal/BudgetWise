@@ -1,0 +1,71 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [ "*" ]
+  pull_request:
+    branches: [ "*" ]
+
+jobs:
+  test-backend:
+
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    # CI runs on a clean machine every time
+    # services → spin up dependencies (Postgres)
+    # env → replace .env file
+    # placeholders → prevent crashes for unused services
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: budgetwise_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:password@localhost:5432/budgetwise_test
+      JWT_SECRET: test_secret
+      JWT_REFRESH_SECRET: test_refresh_secret
+      NODE_ENV: test
+      SQS_QUEUE_URL: placeholder
+      AWS_REGION: ap-south-1
+      AWS_ACCESS_KEY_ID: placeholder
+      AWS_SECRET_ACCESS_KEY: placeholder
+      SES_FROM_EMAIL: placeholder@test.com
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - run: npm install
+    - run: npx prisma generate
+    - run: npx prisma migrate deploy
+    - run: npm test
+
+  test-frontend:
+
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - run: npm test
