@@ -5,7 +5,7 @@ import { setToken, clearUser } from './slices/authSlice'
 
 // Every request automatically attaches the token from localStorage
 const baseQuery = fetchBaseQuery({
-    baseUrl: 'http://localhost:5000/api',
+    baseUrl: 'http://13.127.130.200:5000/api',
     credentials: 'include',  // ← add this — sends cookies cross-origin
     prepareHeaders: (headers, { getState }) => {
         const token = getState().auth.token;
