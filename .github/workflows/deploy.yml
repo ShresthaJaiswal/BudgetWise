@@ -3,6 +3,8 @@ name: Deploy
 on:
   push:
     branches: [ dev, main ]
+  # for manual prod trigger
+  workflow_dispatch:
 
 jobs:
 
@@ -73,6 +75,7 @@ jobs:
   deploy-frontend:
 
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
     needs: [test-frontend]
     defaults:
       run:
@@ -96,6 +99,7 @@ jobs:
   deploy-backend:
 
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
     needs: [test-backend]
     # no default: working-directory, since it doesn't run on GitHub runner but on EC2 machine, so working-directory is completely ignored ❌
     # no need to specify services or env here (only for GitHub Actions, not EC2) since EC2 should already have: 1. DB installed locally or using RDS, 2. .env file on EC2, 3. Deploy script just assumes everything is already configured
