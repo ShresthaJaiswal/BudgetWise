@@ -23,10 +23,10 @@ function AppLayout() {
     <div className="min-h-screen">
       {user && <Navbar />}
       <Routes>
-        <Route path="/login" 
+        <Route path="/login"
           element={
             <Login />
-          } 
+          }
         />
         <Route
           path="/dashboard"
@@ -41,7 +41,7 @@ function AppLayout() {
             <ProtectedRoute>
               <Groups />
             </ProtectedRoute>
-            } 
+          }
         />
         <Route
           path="/summary"

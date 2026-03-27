@@ -1,58 +1,117 @@
-# name: Run Tests
+name: Deploy
 
-# on:
-#   push:
-#     branches: [ "*" ]
-#   pull_request:
-#     branches: [ "*" ]
+on:
+  push:
+    branches: [ dev, main ]
 
-# jobs:
-#   test-backend:
+jobs:
 
-#     runs-on: ubuntu-latest
+  test-backend:
 
-#     defaults:
-#       run:
-#         working-directory: backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
 
-#     # CI runs on a clean machine every time
-#     # services → spin up dependencies (Postgres)
-#     # env → replace .env file
-#     # placeholders → prevent crashes for unused services
+    # CI runs on a clean machine every time
+    # services → spin up dependencies (Postgres)
+    # env → replace .env file
+    # placeholders → prevent crashes for unused services
 
-#     services:
-#       postgres:
-#         image: postgres:15
-#         env:
-#           POSTGRES_USER: postgres
-#           POSTGRES_PASSWORD: password
-#           POSTGRES_DB: budgetwise_test
-#         ports:
-#           - 5432:5432
-#         options: >-
-#           --health-cmd pg_isready
-#           --health-interval 10s
-#           --health-timeout 5s
-#           --health-retries 5
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: budgetwise_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
-#     env:
-#       DATABASE_URL: postgresql://postgres:password@localhost:5432/budgetwise_test
-#       JWT_SECRET: test_secret
-#       JWT_REFRESH_SECRET: test_refresh_secret
-#       NODE_ENV: test
-#       SQS_QUEUE_URL: placeholder
-#       AWS_REGION: ap-south-1
-#       AWS_ACCESS_KEY_ID: placeholder
-#       AWS_SECRET_ACCESS_KEY: placeholder
-#       SES_FROM_EMAIL: placeholder@test.com
+    env:
+      DATABASE_URL: postgresql://postgres:password@localhost:5432/budgetwise_test
+      JWT_SECRET: test_secret
+      JWT_REFRESH_SECRET: test_refresh_secret
+      NODE_ENV: test
+      SQS_QUEUE_URL: placeholder
+      AWS_REGION: ap-south-1
+      AWS_ACCESS_KEY_ID: placeholder
+      AWS_SECRET_ACCESS_KEY: placeholder
+      SES_FROM_EMAIL: placeholder@test.com
 
-#     steps:
-#     - uses: actions/checkout@v4
-#     - name: Use Node.js ${{ matrix.node-version }}
-#       uses: actions/setup-node@v4
-#       with:
-#         node-version: ${{ matrix.node-version }}
-#     - run: npm install
-#     - run: npm ci
-#     - run: npm run build --if-present
-#     - run: npm test
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - run: npm install
+    - run: npx prisma generate
+    - run: npx prisma migrate deploy
+    - run: npm test
+
+  test-frontend:
+
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - run: npm test
+
+
+  deploy-frontend:
+
+    runs-on: ubuntu-latest
+    needs: [test-frontend]
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - run: npm run build
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+      - run: aws s3 sync dist/ s3://${{ secrets.S3_BUCKET }}
+
+      
+  deploy-backend:
+
+    runs-on: ubuntu-latest
+    needs: [test-backend]
+    # no default: working-directory, since it doesn't run on GitHub runner but on EC2 machine, so working-directory is completely ignored ❌
+    # no need to specify services or env here (only for GitHub Actions, not EC2) since EC2 should already have: 1. DB installed locally or using RDS, 2. .env file on EC2, 3. Deploy script just assumes everything is already configured
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        node-version: '20'
+    - name: SSH into EC2 and deploy
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          cd ~/BudgetWise/backend
+          git pull origin main
+          npm install
+          pm2 restart budgetwise-backend
