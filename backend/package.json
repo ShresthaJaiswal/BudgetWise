@@ -10,7 +10,9 @@
   },
   "jest": {
     "testEnvironment": "node",
-    "moduleNameMapper": {"^(\\.{1,2}/.*)\\.js$": "$1"},
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
     "transform": {}
   },
   "keywords": [],
@@ -39,6 +41,7 @@
     "pg": "^8.18.0",
     "prisma": "^6.19.2",
     "resend": "^6.9.3",
+    "serverless-http": "^4.0.0",
     "winston": "^3.19.0",
     "zod": "^4.3.6"
   },

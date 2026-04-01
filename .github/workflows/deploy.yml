@@ -104,18 +104,58 @@ jobs:
     # no default: working-directory, since it doesn't run on GitHub runner but on EC2 machine, so working-directory is completely ignored ❌
     # no need to specify services or env here (only for GitHub Actions, not EC2) since EC2 should already have: 1. DB installed locally or using RDS, 2. .env file on EC2, 3. Deploy script just assumes everything is already configured
 
+    # steps:
+    # - uses: actions/checkout@v4
+    #   with:
+    #     node-version: '20'
+    # - name: SSH into EC2 and deploy
+    #   uses: appleboy/ssh-action@v0.1.10
+    #   with:
+    #     host: ${{ secrets.EC2_HOST }}
+    #     username: ubuntu
+    #     key: ${{ secrets.EC2_SSH_KEY }}
+    #     script: |
+    #       cd ~/BudgetWise/backend
+    #       git pull origin main
+    #       npm install
+    #       pm2 restart budgetwise-backend
+
+    # New scripts section for Lambda deployment
     steps:
-    - uses: actions/checkout@v4
-      with:
-        node-version: '20'
-    - name: SSH into EC2 and deploy
-      uses: appleboy/ssh-action@v0.1.10
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ubuntu
-        key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
-          cd ~/BudgetWise/backend
-          git pull origin main
-          npm install
-          pm2 restart budgetwise-backend
+      - uses: actions/checkout@v4
+      # The original deploy-backend job, it didn't have setup-node because it wasn't running npm install on the GitHub runner — it was SSHing into EC2 and running commands there. EC2 already had Node installed.
+      # Now we're running npm install on the GitHub runner itself before zipping, so we need Node available on the runner — hence setup-node.
+      # The frontend and test jobs already had it for the same reason — they run npm install on the runner directly.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install production dependencies
+        working-directory: backend
+        run: npm install --omit=dev
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Package and deploy to Lambda
+        working-directory: backend
+        run: |
+          zip -r ../lambda-code.zip . \
+            --exclude "*.git*" \
+            --exclude "*node_modules/prisma/build*" \
+            --exclude "*node_modules/prisma/dist*" \
+            --exclude "*node_modules/.cache*" \
+            --exclude "*node_modules/effect*" \
+            --exclude "tests/*" \
+            --exclude "workers/*"
+
+          aws s3 cp ../lambda-code.zip s3://budgetwise-frontend-bucket/lambda-code.zip
+
+          aws lambda update-function-code \
+            --function-name budgetwise-backend \
+            --s3-bucket budgetwise-frontend-bucket \
+            --s3-key lambda-code.zip
