@@ -1,0 +1,191 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: BudgetWise serverless infrastructure
+
+# Define the file format and input parameters
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, uat, prod]
+    Description: Deployment environment
+
+  DBPassword:
+    Type: String
+    NoEcho: true   # passwords won't show in logs
+    Description: RDS master password
+
+  FrontendURL:
+    Type: String
+    Description: S3 frontend URL for CORS
+
+  JwtSecret:
+    Type: String
+    NoEcho: true
+
+  JwtRefreshSecret:
+    Type: String
+    NoEcho: true
+
+  AwsRegion:
+    Type: String
+    Default: ap-south-1
+    Description: AWS Region for resources
+
+  AWSAccountId:
+    Type: String
+    Default: '483510444810'
+    Description: AWS Account ID
+
+# main section
+Resources:
+
+  # Lambda Layers
+  PrismaLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub budgetwise-prisma-${Environment}   # !Sub is CloudFormation's string interpolation — it replaces ${Environment} with whatever you pass in (dev/uat/prod).
+      Description: Prisma client and binaries for Lambda
+      CompatibleRuntimes: [nodejs20.x]
+      Content:
+        S3Bucket: budgetwise-frontend-bucket
+        S3Key: layer-prisma.zip
+
+  DepsLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub budgetwise-deps-${Environment}
+      Description: Other node_modules dependencies for Lambda
+      CompatibleRuntimes: [nodejs20.x]
+      Content:
+        S3Bucket: budgetwise-frontend-bucket
+        S3Key: layer-deps.zip
+
+  # IAM Role Lambda assumes when it runs
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub budgetwise-lambda-role-${Environment}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSLambdaVPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+      Policies:
+        - PolicyName: BudgetWiseServices
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: '*'
+
+  # The Lambda function itself
+  BudgetWiseLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub budgetwise-lambda-${Environment}
+      Runtime: nodejs20.x
+      Handler: lambda.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 30
+      MemorySize: 256 # we're bumping from 128MB since Prisma needs more memory
+      Layers:
+        - !Ref PrismaLayer
+        - !Ref DepsLayer
+      Code:
+        S3Bucket: budgetwise-frontend-bucket
+        S3Key: lambda-code.zip
+      Environment:
+        Variables:
+          NODE_ENV: !Ref Environment
+          FRONTEND_URL: !Ref FrontendURL
+          JWT_SECRET: !Ref JwtSecret
+          JWT_REFRESH_SECRET: !Ref JwtRefreshSecret
+          DB_PASSWORD: !Ref DBPassword
+          AWS_REGION_NAME: !Ref AwsRegion
+          SQS_QUEUE_URL: !Sub https://sqs.${AwsRegion}.amazonaws.com/${AWSAccountId}/budgetwise-${Environment}
+
+  # API Gateway to expose the Lambda via HTTP
+  BudgetWiseApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub budgetwise-api-${Environment}
+      Description: BudgetWise REST API
+      
+  ProxyResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref BudgetWiseApi
+      ParentId: !GetAtt BudgetWiseApi.RootResourceId
+      PathPart: '{proxy+}'
+
+  ProxyMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref BudgetWiseApi
+      ResourceId: !Ref ProxyResource
+      HttpMethod: ANY
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AwsRegion}:lambda:path/2015-03-31/functions/${BudgetWiseLambda.Arn}/invocations
+
+  LambdaApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref BudgetWiseLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AwsRegion}:${AWSAccountId}:${BudgetWiseApi}/*/*/*
+
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: [ProxyMethod]
+    Properties:
+      RestApiId: !Ref BudgetWiseApi
+
+  ApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId: !Ref BudgetWiseApi
+      DeploymentId: !Ref ApiDeployment
+      StageName: !Ref Environment
+
+# values CloudFormation prints after a successful deploy
+Outputs:
+  ApiUrl:
+    Description: API Gateway URL
+    Value: !Sub https://${BudgetWiseApi}.execute-api.${AwsRegion}.amazonaws.com/${Environment}
+    # Makes Outputs available to other CloudFormation stacks if we ever split infrastructure into multiple templates.
+    Export:
+      Name: !Sub budgetwise-api-url-${Environment}
+
+  LambdaFunctionName:
+    Description: Lambda function name
+    Value: !Ref BudgetWiseLambda
+    Export:
+      Name: !Sub budgetwise-lambda-${Environment}
+
+  LambdaFunctionArn:
+    Description: Lambda function ARN
+    Value: !GetAtt BudgetWiseLambda.Arn
+    Export:
+      Name: !Sub budgetwise-lambda-arn-${Environment}
+
+
+# Validate template before deploying: 
+# aws cloudformation validate-template --template-body file://C:\Users\shrestha.jaiswal\Downloads\budgetwise\budgetwise\infrastructure.yml
