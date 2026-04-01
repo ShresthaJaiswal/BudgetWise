@@ -146,10 +146,7 @@ jobs:
         run: |
           zip -r ../lambda-code.zip . \
             --exclude "*.git*" \
-            --exclude "*node_modules/prisma/build*" \
-            --exclude "*node_modules/prisma/dist*" \
-            --exclude "*node_modules/.cache*" \
-            --exclude "*node_modules/effect*" \
+            --exclude "*node_modules*" \
             --exclude "tests/*" \
             --exclude "workers/*"
 
