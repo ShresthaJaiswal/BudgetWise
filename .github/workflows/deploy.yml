@@ -156,3 +156,34 @@ jobs:
             --function-name budgetwise-backend \
             --s3-bucket budgetwise-frontend-bucket \
             --s3-key lambda-code.zip
+
+  # CloudFormation deploy step so infra changes also go through CI/CD
+  deploy-infrastructure:
+
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    needs: [deploy-backend, deploy-frontend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Deploy CloudFormation stack
+        run: |
+          aws cloudformation deploy \
+          --template-file infrastructure.yml \
+          --stack-name budgetwise-${{ github.event.inputs.environment || 'dev' }} \
+          --parameter-overrides \
+            Environment=${{ github.event.inputs.environment || 'dev' }} \
+            FrontendURL=${{ secrets.FRONTEND_URL }} \
+            JwtSecret=${{ secrets.JWT_SECRET }} \
+            JwtRefreshSecret=${{ secrets.JWT_REFRESH_SECRET }} \
+            DatabaseUrl=${{ secrets.DATABASE_URL }} \
+          --capabilities CAPABILITY_NAMED_IAM \
+          --no-fail-on-empty-changeset
