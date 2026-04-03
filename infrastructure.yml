@@ -9,10 +9,10 @@ Parameters:
     AllowedValues: [dev, uat, prod]
     Description: Deployment environment
 
-  DBPassword:
+  DatabaseUrl:
     Type: String
-    NoEcho: true   # passwords won't show in logs
-    Description: RDS master password
+    NoEcho: true
+    Description: Full PostgreSQL connection string
 
   FrontendURL:
     Type: String
@@ -20,7 +20,7 @@ Parameters:
 
   JwtSecret:
     Type: String
-    NoEcho: true
+    NoEcho: true   # won't show in logs
 
   JwtRefreshSecret:
     Type: String
@@ -114,7 +114,7 @@ Resources:
           FRONTEND_URL: !Ref FrontendURL
           JWT_SECRET: !Ref JwtSecret
           JWT_REFRESH_SECRET: !Ref JwtRefreshSecret
-          DB_PASSWORD: !Ref DBPassword
+          DATABASE_URL: !Ref DatabaseUrl
           AWS_REGION_NAME: !Ref AwsRegion
           SQS_QUEUE_URL: !Sub https://sqs.${AwsRegion}.amazonaws.com/${AWSAccountId}/budgetwise-${Environment}
 
