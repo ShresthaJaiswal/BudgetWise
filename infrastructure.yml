@@ -122,7 +122,7 @@ Resources:
           JWT_REFRESH_SECRET: !Ref JwtRefreshSecret
           DATABASE_URL: !Ref DatabaseUrl
           AWS_REGION_NAME: !Ref AwsRegion
-          SQS_QUEUE_URL: !Sub https://sqs.${AwsRegion}.amazonaws.com/${AWSAccountId}/budgetwise-${Environment}
+          SQS_QUEUE_URL: !GetAtt ExportQueue.QueueUrl
 
   # API Gateway to expose the Lambda via HTTP
   BudgetWiseApi:
