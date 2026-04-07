@@ -92,6 +92,7 @@ Resources:
                   - sqs:SendMessage
                   - sqs:ReceiveMessage
                   - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
                   - s3:GetObject
                   - s3:PutObject
                 Resource: '*'
