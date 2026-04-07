@@ -165,6 +165,44 @@ Resources:
       DeploymentId: !Ref ApiDeployment
       StageName: !Ref Environment
 
+  # CloudFront Distribution
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: !Sub budgetwise-${Environment}
+        DefaultRootObject: index.html
+        Enabled: true
+        PriceClass: PriceClass_100
+
+        Origins:
+          - Id: S3-frontend
+            DomainName: budgetwise-frontend-bucket.s3-website.ap-south-1.amazonaws.com
+            CustomOriginConfig:
+              HTTPPort: 80
+              OriginProtocolPolicy: http-only
+
+          - Id: API-Gateway
+            DomainName: !Sub ${BudgetWiseApi}.execute-api.ap-south-1.amazonaws.com
+            OriginPath: !Sub /${Environment}
+            CustomOriginConfig:
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+
+        DefaultCacheBehavior:
+          TargetOriginId: S3-frontend
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # CachingOptimized
+
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: API-Gateway
+            ViewerProtocolPolicy: https-only
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachedMethods: [GET, HEAD]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad        # CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
+
 # values CloudFormation prints after a successful deploy
 Outputs:
   ApiUrl:
@@ -185,6 +223,12 @@ Outputs:
     Value: !GetAtt BudgetWiseLambda.Arn
     Export:
       Name: !Sub budgetwise-lambda-arn-${Environment}
+
+  CloudFrontURL:
+    Description: CloudFront distribution URL
+    Value: !Sub https://${CloudFrontDistribution.DomainName}
+    Export:
+      Name: !Sub budgetwise-cloudfront-url-${Environment}
 
 
 # Validate template before deploying: 
