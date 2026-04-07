@@ -251,6 +251,7 @@ Resources:
   # SQS → Lambda trigger
   ExportQueueTrigger:
     Type: AWS::Lambda::EventSourceMapping
+    DependsOn: LambdaExecutionRole  # The sqs:GetQueueAttributes fix wasn't taking effect because the LambdaExecutionRole update and ExportQueueTrigger creation were happening in the wrong order — CloudFormation was trying to create the trigger before the role update was applied.
     Properties:
       EventSourceArn: !GetAtt ExportQueue.Arn
       FunctionName: !GetAtt ExportLambda.Arn
