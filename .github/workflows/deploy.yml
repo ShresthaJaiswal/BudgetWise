@@ -153,7 +153,7 @@ jobs:
           aws s3 cp ../lambda-code.zip s3://budgetwise-frontend-bucket/lambda-code.zip
 
           aws lambda update-function-code \
-            --function-name budgetwise-backend \
+            --function-name budgetwise-lambda-dev \
             --s3-bucket budgetwise-frontend-bucket \
             --s3-key lambda-code.zip
 
