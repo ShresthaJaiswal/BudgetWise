@@ -41,7 +41,7 @@ app.use('/api/groups', groupRoutes)
 app.use('/api/export', exportRoutes)
 
 
-startExportWorker()  // Start the export worker when the server starts
+// startExportWorker()  // Start the export worker when the server starts
 
 // 404 handler
 app.use((req, res) => {

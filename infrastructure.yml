@@ -36,6 +36,10 @@ Parameters:
     Default: '483510444810'
     Description: AWS Account ID
 
+  SesFromEmail:
+    Type: String
+    Description: Verified SES email address for sending exports
+
 # main section
 Resources:
 
@@ -203,6 +207,55 @@ Resources:
             CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad        # CachingDisabled
             OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
 
+  # SQS Queues
+  ExportDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub budgetwise-export-dlq-${Environment}
+      MessageRetentionPeriod: 1209600  # 14 days: messages stay in DLQ for 2 weeks for debugging
+
+  ExportQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub budgetwise-export-${Environment}
+      VisibilityTimeout: 180  # 3x Lambda timeout — gives Lambda time to finish before SQS retries
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt ExportDLQ.Arn
+        maxReceiveCount: 3  # after 3 failures, message moves to DLQ automatically
+
+  #Export Lambda
+  ExportLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub budgetwise-export-${Environment}
+      Runtime: nodejs20.x
+      Handler: exportLambda.handler
+      Role: !GetAtt LambdaExecutionRole.Arn  # reuse same role, already has SES + SQS permissions
+      Timeout: 60
+      MemorySize: 256
+      Layers:
+        - !Ref PrismaLayer
+        - !Ref DepsLayer
+      Code:
+        S3Bucket: budgetwise-frontend-bucket
+        S3Key: lambda-code.zip
+      Environment:
+        Variables:
+          NODE_ENV: !Ref Environment
+          DATABASE_URL: !Ref DatabaseUrl
+          AWS_REGION_NAME: !Ref AwsRegion
+          SES_FROM_EMAIL: !Ref SesFromEmail
+          SQS_QUEUE_URL: !GetAtt ExportQueue.QueueUrl
+
+  # SQS → Lambda trigger
+  ExportQueueTrigger:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt ExportQueue.Arn
+      FunctionName: !GetAtt ExportLambda.Arn
+      BatchSize: 5  # process up to 5 export jobs per Lambda invocation
+      Enabled: true
+
 # values CloudFormation prints after a successful deploy
 Outputs:
   ApiUrl:
@@ -230,6 +283,14 @@ Outputs:
     Export:
       Name: !Sub budgetwise-cloudfront-url-${Environment}
 
+  ExportQueueUrl:
+    Description: SQS Export Queue URL
+    Value: !GetAtt ExportQueue.QueueUrl
+    Export:
+      Name: !Sub budgetwise-export-queue-${Environment}
 
-# Validate template before deploying: 
-# aws cloudformation validate-template --template-body file://C:\Users\shrestha.jaiswal\Downloads\budgetwise\budgetwise\infrastructure.yml
+  ExportDLQUrl:
+    Description: SQS Export DLQ URL
+    Value: !GetAtt ExportDLQ.QueueUrl
+    Export:
+      Name: !Sub budgetwise-export-dlq-${Environment}

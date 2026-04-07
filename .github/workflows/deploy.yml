@@ -185,5 +185,6 @@ jobs:
             JwtSecret=${{ secrets.JWT_SECRET }} \
             JwtRefreshSecret=${{ secrets.JWT_REFRESH_SECRET }} \
             DatabaseUrl=${{ secrets.DATABASE_URL }} \
+            SesFromEmail=${{ secrets.SES_FROM_EMAIL }} \
           --capabilities CAPABILITY_NAMED_IAM \
           --no-fail-on-empty-changeset
