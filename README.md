@@ -14,7 +14,7 @@ Built to explore the gap between knowing individual technologies and making them
 
 ![BudgetWise Architecture](./assets/architecture1.svg)
 
-The backend is split into two Lambda functions. The main one handles all API routes through Express + `serverless-http`. The export Lambda is decoupled entirely — it's triggered by SQS when a user requests a CSV export, generates the file, and emails it via SES. If it fails, SQS retries up to 3 times before moving the message to a dead-letter queue.
+The backend is split into two Lambda functions. The main one handles all API routes through Express + `serverless-http`. The export Lambda is decoupled entirely, it's triggered by SQS when a user requests a CSV export, generates the file, and emails it via SES. If it fails, SQS retries up to 3 times before moving the message to a dead-letter queue.
 
 The entire infrastructure is defined in `infrastructure.yml` (CloudFormation) and can be recreated with a single command.
 
@@ -40,7 +40,7 @@ The entire infrastructure is defined in `infrastructure.yml` (CloudFormation) an
 
 **Group Budgets** — create named groups, add transactions to them, track shared spending separately from personal finances.
 
-**CSV Export** — async export pipeline. The request is queued in SQS, processed by a separate Lambda, and delivered to your inbox as a CSV attachment — without blocking the main API.
+**CSV Export** — async export pipeline. The request is queued in SQS, processed by a separate Lambda, and delivered to your inbox as a CSV attachment without blocking the main API.
 
 **Stats** — spending summaries, category breakdowns, and balance trends computed server-side.
 
@@ -80,7 +80,7 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
-CI/CD runs on GitHub Actions. Pushing to `main` and triggering `workflow_dispatch` runs tests, deploys the frontend to S3, updates the Lambda function code, and syncs the CloudFormation stack — in that order.
+CI/CD runs on GitHub Actions. Pushing to `main` and triggering `workflow_dispatch` runs tests, deploys the frontend to S3, updates the Lambda function code, and syncs the CloudFormation stack, in that order.
 
 Lambda dependencies (Prisma, node_modules) are split across two Lambda Layers to stay within the 250MB uncompressed limit. The function code zip itself is ~50KB.
 
