@@ -6,7 +6,7 @@ const features = [
   { name: 'Password Reset via OTP', active: true, desc: 'Email OTP via Amazon SES' },
   { name: 'Income & Expense Tracking', active: true, desc: 'Add, edit, soft delete transactions' },
   { name: 'Smart Filters', active: true, desc: 'Filter by type, category, date, custom range' },
-  { name: 'CSV Export', active: true, desc: 'Export filtered transactions' },
+  { name: 'CSV/PDF Export', active: true, desc: 'Export filtered transactions' },
   { name: 'Dark Mode', active: true, desc: 'Persistent theme preference' },
   { name: 'Financial Summary', active: true, desc: 'Monthly chart and category breakdown' },
   { name: 'CloudWatch Logging', active: true, desc: 'Structured error logging via AWS' },
@@ -20,9 +20,10 @@ const features = [
 
 const techStack = [
   { layer: 'Frontend', items: ['React 18', 'Redux Toolkit', 'RTK Query', 'Tailwind CSS', 'Vite'] },
-  { layer: 'Backend', items: ['Node.js', 'Express', 'Prisma ORM', 'PostgreSQL'] },
-  { layer: 'Auth & Security', items: ['JWT', 'bcryptjs', 'OTP via Amazon SES'] },
-  { layer: 'Infra & Logging', items: ['AWS CloudWatch', 'Winston', 'AWS SDK v3'] },
+  { layer: 'Backend', items: ['Node.js', 'Express', 'Prisma ORM', 'PostgreSQL', 'Zod'] },
+  { layer: 'Auth & Security', items: ['JWT', 'Refresh token rotation', 'bcryptjs', 'OTP via SES', 'Rate limiting'] },
+  { layer: 'Cloud & Infra', items: ['AWS Lambda', 'API Gateway', 'RDS', 'S3', 'CloudFront', 'SQS', 'SES', 'CloudFormation'] },
+  { layer: 'Observability', items: ['AWS CloudWatch', 'Winston', 'Custom CloudWatch transport'] },
 ]
 
 export default function About() {
